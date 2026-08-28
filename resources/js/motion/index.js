@@ -29,6 +29,10 @@ import {
     hoverLift,
     pressScale,
     splash,
+    gradientPan,
+    glowPulse,
+    countUp,
+    tilt3d,
 } from "./animations";
 
 const animations = {
@@ -76,6 +80,12 @@ const animations = {
     "press-scale": pressScale,
 
     splash: splash,
+
+    // Rich / tech
+    "gradient-pan": gradientPan,
+    "glow-pulse": glowPulse,
+    "count-up": countUp,
+    "tilt-3d": tilt3d,
 };
 
 const registry = new WeakMap();

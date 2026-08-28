@@ -39,7 +39,7 @@
                         Profile
                     </a>
 
-                    <form method="POST" action="{{ '#' }}" class="inline">
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="btn btn-xs sm:btn-sm btn-neutral w-full">Logout</button>
                     </form>

@@ -17,3 +17,36 @@
         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
         "Noto Color Emoji";
 }
+
+@layer components {
+    .glass-card {
+        @apply bg-base-100/60 backdrop-blur-xl border border-base-300/60 shadow-xl;
+    }
+
+    .glass-card--primary {
+        @apply bg-base-100/60 backdrop-blur-xl border border-primary/30 shadow-xl;
+    }
+
+    .text-gradient {
+        @apply bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent;
+    }
+}
+
+/* Decorative grid overlay (theme-adaptive via base-content) */
+.bg-grid {
+    background-image:
+        linear-gradient(to right, color-mix(in oklch, var(--color-base-content) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklch, var(--color-base-content) 6%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+
+/* Aurora blob — pan via Motion (data-motion="gradient-pan") */
+.bg-aurora {
+    background-image:
+        radial-gradient(circle at 30% 30%, color-mix(in oklch, var(--color-primary) 45%, transparent), transparent 60%),
+        radial-gradient(circle at 70% 70%, color-mix(in oklch, var(--color-secondary) 45%, transparent), transparent 60%);
+    background-size: 200% 200%;
+    filter: blur(40px);
+}

@@ -35,7 +35,7 @@
                 </summary>
                 <ul class="mt-1">
                     <li>
-                        <a href="{{ '#' }}" wire:current="menu-active" wire:navigate>
+                        <a href="{{ route('admin.pengguna.index') }}" wire:current="menu-active" wire:navigate>
                             Akun Pengguna
                         </a>
                     </li>
@@ -61,7 +61,7 @@
             </div>
         </div>
         <div class="mt-2">
-            <form method="POST" action="{{ '#' }}" class="inline">
+            <form method="POST" action="{{ route('logout') }}" class="inline">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-neutral w-full">Logout</button>
             </form>

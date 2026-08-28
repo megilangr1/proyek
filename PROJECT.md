@@ -1,178 +1,270 @@
 # PROJECT.md
 
-Panduan dan ringkasan proyek ini untuk developer dan AI coding agent.
-Untuk aturan perilaku agent yang wajib diikuti, baca `AGENTS.md` (berisi Laravel Boost guidelines). File ini melengkapi, bukan menggantikan, `AGENTS.md`.
+Panduan & ringkasan proyek untuk developer **dan AI coding agent**. Ini adalah "kurikulum
+pertama" yang harus dibaca agent saat mengenal project ini, baik di sesi pertama maupun sesi
+berikutnya. Untuk aturan perilaku wajib, baca `AGENTS.md` (Laravel Boost guidelines). File ini
+melengkapi, bukan menggantikan, `AGENTS.md`.
 
-## Identitas Proyek
+---
 
-- **Nama:** Proyek Latihan laravel 13 v4
-- **Jenis:** Aplikasi web Laravel (latihan / starter)
-- **URL lokal:** http://proyek.test (di-serve oleh Laravel Herd; lihat `AGENTS.md` section herd)
-- **Status:** Fresh init, sudah migrasi & build.
+## 1. Identitas Proyek
 
-## Stack Teknologi
+- **Nama:** Proyek Latihan Laravel 13 (starter / latihan)
+- **Jenis:** Aplikasi web Laravel monolitik dengan UI reaktif server-side (Livewire)
+- **URL lokal:** http://proyek.test (di-serve Laravel Herd; lihat `AGENTS.md` → herd)
+- **Status:** Sudah migrasi, build, auth (login/logout) jalan, landing page sudah direfactor
+  (glassmorphism + Motion + Lucide). Area admin masih kerangka.
+
+---
+
+## 2. Stack Teknologi
 
 | Layer | Teknologi |
 |-------|-----------|
-| Framework | Laravel 13.29 (PHP 8.4) |
+| Framework | Laravel 13 (PHP 8.4) |
 | Bahasa | PHP 8.4 |
-| UI reaktif (server) | Livewire 4 (full-page / single-file "Volt" components, `⚡` prefix) |
-| UI interaktif (client) | Alpine.js (via `resources/js/alpine`) |
-| Styling | Tailwind CSS v4 + daisyUI 5 |
-| Font utama | **Outfit** (di-load via Bunny Fonts CDN, lihat bawah) |
-| Animasi | Motion (`resources/js/motion`) |
+| UI reaktif (server) | Livewire 4 — full-page / single-file "Volt" components (prefix `⚡`) |
+| UI interaktif (client) | Alpine.js (`resources/js/alpine`) |
+| Styling | Tailwind CSS v4 + daisyUI 5 (theme `corporate` default, `luxury` dark) |
+| Font | **Outfit** via Bunny Fonts CDN |
+| Animasi | Motion (`resources/js/motion`) — engine `data-motion` |
 | Carousel | Swiper (`resources/js/components/swiper`) |
-| Auth & otorisasi | Laravel built-in + spatie/laravel-permission v8 |
-| Database | MySQL (`proyek`, host 127.0.0.1:3306, user `root`, tanpa password) |
+| Icon | Lucide (`mallardduck/blade-lucide-icons` → `<x-lucide-*>`) |
+| Auth & otorisasi | Laravel built-in (`Auth::attempt`/`login`/`logout`) + spatie/laravel-permission v8 |
+| Database | MySQL (`proyek`, 127.0.0.1:3306, user `root`, tanpa password) |
 | Build frontend | Vite 8 (`@tailwindcss/vite`, `laravel-vite-plugin`) |
-| Testing | Pest 5 (`pestphp/pest` + `pest-plugin-laravel`) |
+| Testing | Pest 5 |
 | Formatting | Laravel Pint |
 | AI tooling | Laravel Boost (`laravel/boost`) |
 
-## Cara Menjalankan
+> Tidak ada starter kit (Breeze/Jetstream). Auth di-hand-roll via Livewire Volt + facade `Auth`.
+
+---
+
+## 3. Cara Menjalankan
 
 ```bash
-# Dependensi (sudah terpasang, jalankan kalau ada perubahan composer/package)
 composer install
 npm install --ignore-scripts
 
-# Setup awal (generate key, migrasi, build)
-composer run setup
-
-# Development:
-composer run dev      # menjalankan `php artisan dev` (artisan + vite watch)
-# atau jalankan terpisah:
-php artisan serve     # tidak perlu jika pakai Herd
-npm run dev           # vite hot-reload
-
-# Build produksi
-npm run build
-
-# Testing
+composer run setup        # key:generate + migrate + npm run build
+composer run dev          # php artisan dev (artisan + vite watch)
+npm run dev               # vite hot-reload (alternatif)
+npm run build             # build produksi
 php artisan test --compact
-vendor/bin/pest
 ```
 
-> Frontend menggunakan Vite. Jika perubahan UI tidak muncul, jalankan `npm run dev` / `npm run build` (lihat `AGENTS.md` section Frontend Bundling).
+> Frontend Vite. Jika perubahan UI tak muncul → jalankan `npm run dev` / `npm run build`.
 
-## Struktur Direktori Penting
+---
+
+## 4. Struktur Direktori Penting
 
 ```
 app/
-  Http/Controllers/
-    Controller.php          # base controller
-    MainController.php       # (ORPHAN) tidak lagi dipakai route, lihat catatan
-  Models/
-    User.php                 # Authenticatable + HasRoles + SoftDeletes
-routes/
-  web.php                    # Route::livewire() full-page components (lihat bawah)
-  console.php
-resources/
-  views/
-    pages/
-      ⚡main.blade.php        # GET /  -> "pages::main" (layout layouts::public)
-                                # Landing page "Pendataan dan Rekap Pintar": hero +
-                                # fitur (stagger) + cara kerja (steps) + teknologi
-                                # (Swiper) + testimoni + CTA
-    admin/
-      ⚡main.blade.php        # GET /admin -> "admin::main" (layout default layouts::app)
-                                # Masih minimal; area admin memakai layout drawer +
-                                # sidebar + navbar (lihat layouts di bawah)
-    main.blade.php           # (ORPHAN) sisa lama, tidak dipakai
-    welcome.blade.php        # sisa default Laravel (tidak dipakai)
-    layouts/
-      public.blade.php       # layout landing page (navbar + theme toggle + footer)
-      app.blade.php          # DEFAULT component_layout Livewire (config/livewire.php
-                                # -> 'component_layout' => 'layouts::app'); berisi drawer
-                                # + sidebar + navbar (admin)
-      navbar.blade.php       # navbar admin (theme toggle, dropdown user, logout)
-      sidebar.blade.php      # sidebar admin (logo, menu, profil user)
-      css.blade.php          # @livewireStyles + stack css
-      script.blade.php       # @livewireScripts + stack script
+  Http/Controllers/MainController.php   # ORPHAN (import sudah dihapus dari routes)
+  Models/User.php                       # Authenticatable + HasRoles + SoftDeletes
+config/
+  livewire.php                          # component_namespaces: layouts, pages, admin, auth
+  main_config.php                       # branding (name, short_name, tagline, description)
+routes/web.php                          # Route::livewire() + logout POST
+resources/views/
+  pages/⚡main.blade.php                 # GET /  -> pages::main (layouts::public) — landing
+  auth/⚡login.blade.php                 # GET /login -> auth::login (layouts::auth)
+  admin/⚡main.blade.php                # GET /admin -> admin::main (layouts::app)
+  main.blade.php                        # ORPHAN (pakai pages::main)
+  welcome.blade.php                     # ORPHAN (default Laravel)
+  layouts/
+    public.blade.php                    # layout landing (navbar+footer+theme toggle)
+    app.blade.php                       # DEFAULT Livewire layout (drawer+sidebar+navbar)
+    auth.blade.php                      # layout login (card centered)
+    navbar.blade.php / sidebar.blade.php
   js/
-    app.js                   # entry: init Alpine, Motion, Swiper
-    alpine/                  # komponen Alpine (themeSwitcher.js)
-    components/swiper/        # inisialisasi Swiper
-    motion/                   # inisialisasi Motion
-  css/app.css                # entry CSS (Tailwind + daisyUI)
-config/database.php          # koneksi mysql (default)
+    app.js                              # entry: Alpine + Motion + Swiper
+    alpine/themeSwitcher.js
+    motion/index.js + animations.js     # engine + daftar animasi
+    components/swiper.js
+  css/app.css                           # @import tailwindcss + @plugin daisyui + @theme + utilitas
+public/img/logo.png                    # logo brand
 ```
 
-### Routing (Livewire full-page components)
-
-`routes/web.php` tidak lagi memakai controller, melainkan `Route::livewire()`:
+### 4.1 Routing (Livewire full-page)
 
 ```php
 Route::livewire('/', 'pages::main')->name('main');
-Route::prefix('admin')->name('admin.')->group(function () {
+
+Route::middleware('guest')->group(function () {
+    Route::livewire('/login', 'auth::login')->name('login');
+});
+
+Route::post('/logout', fn (Request $r) => /* Auth::logout + invalidate + regenerateToken */)
+    ->name('logout')->middleware('auth');
+
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::livewire('/', 'admin::main')->name('main');
 });
 ```
 
-- `pages::main` -> `resources/views/pages/⚡main.blade.php`
-- `admin::main` -> `resources/views/admin/⚡main.blade.php`
-- Komponen adalah **single-file Livewire 4** (Volt-style): diawali blok `<?php new class extends Component { ... } ?>` lalu markup Blade. File ditandai prefix `⚡`.
-- `pages::main` memanggil `$this->view()->layout('layouts::public')`.
-- `admin::main` TIDAK memanggil `->layout()` secara eksplisit, sehingga memakai
-  layout default yang di-set di `config/livewire.php` → `'component_layout' => 'layouts::app'`
-  (drawer + sidebar + navbar). `layouts::app` memuat `@vite` dan meng-include `layouts.css`/`layouts.script`.
+- Namespace `auth` → `resources/views/auth`. Komponen SFC diakses sebagai `auth::login`.
+- Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
+  logout via route POST. `/admin` wajib login; `/login` hanya untuk guest.
+- Perlu rute/guard baru? Pakai middleware `auth`/`guest` dan `Route::livewire()`.
 
-### Frontend & Font (Outfit via Bunny Fonts CDN)
+### 4.2 Branding (config-driven)
 
-Font utama **Outfit** tidak di-bundle lewat plugin Vite (`laravel-vite-plugin/fonts`),
-melainkan di-load langsung dari CDN Bunny Fonts agar `@font-face` pasti tersedia:
+Teks brand sentral di `config/main_config.php` (fallback + env `MAIN_CONFIG_*`):
 
-```html
-<link rel="preconnect" href="https://fonts.bunny.net">
-<link href="https://fonts.bunny.net/css?family=outfit:300,400,500,600,700,800" rel="stylesheet">
+```blade
+{{ config('main_config.short_name') }}   {{-- "RekapPintar" (navbar/footer) --}}
+{{ config('main_config.name') }}         {{-- APP_NAME "Rekap Pintar" --}}
+{{ config('main_config.tagline') }}      {{-- judul halaman --}}
+{{ config('main_config.description') }}
 ```
 
-Link tersebut ada di `<head>` kedua layout (`layouts/public.blade.php` & `layouts/app.blade.php`).
-Nama font diikat sebagai default lewat `@theme` di `resources/css/app.css`:
+**Jangan hardcode** "RekapPintar"/brand di view — pakai `config('main_config.*')`.
 
-```css
-@theme {
-    --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif, ...;
-}
-```
+### 4.3 Sistem Animasi (Motion)
 
-> Catatan: plugin `bunny()` di `vite.config.js` pernah dipakai tapi menghasilkan file
-> `@font-face` yang tidak di-link ke halaman (orphan), sehingga font tidak muncul.
-> Itu sebabnya sekarang pakai CDN. Jangan kembalikan `bunny()` ke `vite.config.js`
-> tanpa memastikan css font-nya benar-benar di-link.
+Engine berbasis atribut: `data-motion="<nama>"` dipindai saat load & Livewire navigate.
+Daftar tersedia di `resources/js/motion/index.js` (map `animations`):
 
-## Konvensi & Catatan Arsitektur
+`fade-up`, `fade-down`, `fade-left`, `fade-right`, `blur-fade`, `blur-scale`, `scale-in`,
+`slide-scale`, `spring-in`, `pop-in`, `rotate-in`, `bounce-in`, `float-in`, `reveal`,
+`reveal-left`, `scroll-parallax`, `scroll-progress`, `scroll-fade`, `stagger`, `text-split`,
+`tilt-in`, `flip-in`, `wiggle`, `heartbeat`, `shake`, `shine`, `marquee`, `hover-lift`,
+`press-scale`, `splash`, **`gradient-pan`**, **`glow-pulse`**, **`count-up`**, **`tilt-3d`**.
 
-- **Livewire 4 full-page components** adalah cara utama merender halaman (via `Route::livewire()`). Komponen single-file disimpan di `resources/views/{namespace}/⚡{name}.blade.php` dan dideklarasikan dengan `new class extends Component`.
-- **Alpine.js** hanya untuk interaksi client ringan (theme switcher). State penting tetap di server (Livewire).
-- **Tailwind v4 + daisyUI 5** wajib dipakai untuk komponen UI (lihat skill `daisyui`). Jangan tulis CSS vanilla untuk komponen UI.
-- **Theme switcher:** komponen `themeSwitcher` (Alpine) didefinisikan di `<html>` (`layouts/public.blade.php` & `layouts/app.blade.php`), dengan nilai `corporate` / `luxury` disimpan di `localStorage`.
-- **Layout:** `pages::main` merender via `$this->view()->layout('layouts::public')` (navbar + footer + theme toggle). `admin::main` memakai layout default `layouts::app` (drawer + `layouts/sidebar.blade.php` + `layouts/navbar.blade.php`). Keduanya memuat `@vite` dan Livewire assets.
-- **Model `User`** memakai trait `HasRoles` (spatie) dan `SoftDeletes`. Atribut `#[Fillable]` / `#[Hidden]` menggunakan attribute PHP 8 (bukan property `$fillable`).
-- **Penamaan:** TitleCase untuk Enum key, descriptive names untuk method/variable, curly braces wajib (lihat `AGENTS.md` PHP rules).
-- **Testing:** Pakai Pest. Buat test dengan `php artisan make:test --pest NamaFeatureTest`. Utamakan feature test.
-- **Jangan** ubah dependency (`composer.json` / `package.json`) tanpa persetujuan.
+Opsi via `data-motion-*`: `data-motion-delay`, `data-motion-duration`, `data-motion-distance`,
+`data-motion-scale`, dll. Khusus:
+- `glow-pulse`: `data-motion-glow="primary|secondary|..."` (warna tema), `data-motion-duration`.
+- `count-up`: `data-motion-to="10000"`, `data-motion-suffix="rb+"`, `data-motion-decimals="1"`.
+- `gradient-pan`: butuh elemen bergradien `background-size:200%` (lihat `.bg-aurora`).
 
-## Database
+**Menambah animasi baru:** tulis fungsi di `animations.js` (ikut pola `prefersReducedMotion()`
+guard + `inView()`/`animate()` dari `motion`), lalu daftarkan di `index.js` (import + map).
 
-- Engine: **MySQL**, database `proyek`.
-- Driver terkait di `.env`: `SESSION_DRIVER=database`, `QUEUE_CONNECTION=database`, `CACHE_STORE=database` — tabel pendukung (`sessions`, `jobs`, `cache`, `failed_jobs`) sudah dimigrasi.
-- Tabel spatie permission (`roles`, `permissions`, `model_has_roles`, dll.) sudah ada.
-- Pastikan MySQL (XAMPP) berjalan di port 3306 sebelum `php artisan` yang menyentuh DB.
+### 4.4 Styling & Utilitas
 
-## TODO / Yang Belum Ada
+`resources/css/app.css` mengekspor utilitas kustom (bukan CSS vanila di view):
+`.glass-card`, `.glass-card--primary`, `.text-gradient`, `.bg-grid`, `.bg-aurora`.
+Komponen UI wajib pakai **daisyUI 5** + Tailwind v4 — jangan tulis CSS vanila untuk komponen.
 
-- Belum ada auth scaffolding (login/register) — hanya model `User` + permission.
-- Area admin baru memiliki kerangka layout (drawer + sidebar + navbar) di `layouts/app.blade.php`,
-  tapi komponen `admin::main` (`resources/views/admin/⚡main.blade.php`) masih minimal/placeholder.
-- File **orphan** hasil refactor ke Livewire full-page (bisa dihapus bila tidak dipakai):
-  - `app/Http/Controllers/MainController.php` (route sudah pakai `Route::livewire`, bukan controller).
-  - `resources/views/main.blade.php` (halaman utama sudah dipindah ke `pages/⚡main.blade.php`).
-- `resources/views/welcome.blade.php` sisa default Laravel, tidak terpakai.
+### 4.5 Font (Outfit via Bunny Fonts CDN)
 
-## Catatan untuk AI Agent
+Font tidak dibundle via plugin Vite (pernah orphan). Link CDN ada di `<head>` layout
+(`public.blade.php` & `app.blade.php`); diikat di `@theme` `resources/css/app.css`.
+**Jangan kembalikan** `bunny()` ke `vite.config.js` tanpa memastikan `@font-face` benar-benar
+di-link.
 
-- Selalu baca `AGENTS.md` dan `.ai/rules` (jika ada) sebelum mengubah kode.
-- Gunakan `php artisan make:` untuk membuat file baru.
-- Setelah mengubah PHP, jalankan `vendor/bin/pint --format agent`.
-- Gunakan tools Laravel Boost (database-query, database-schema, search-docs, get-absolute-url) bila relevan.
+### 4.6 Antarmuka Login (`auth`)
+
+Halaman login (`auth::login` + `layouts/auth.blade.php`) sudah dipercantik selaras dengan
+landing page (estetika glass / mewah / tech):
+- **Layout `auth.blade.php`**: background `bg-grid` + `bg-aurora` (`data-motion="gradient-pan"`
+  & `scroll-parallax`), card di-center (`max-w-md`).
+- **Komponen login**: card `glass-card--primary` + `data-motion="float-in"` +
+  `data-motion="glow-pulse"` (`data-motion-glow="primary"` `data-motion-duration="4.5"`);
+  header logo `img/logo.png` + judul `text-gradient`; input email/password memakai ikon
+  `<x-lucide-mail>` / `<x-lucide-lock>` di dalam field; tombol `btn-primary` + `hover-lift`.
+- **Pola ikon dalam input** (penting): wrapper `relative`, tulis `<input>` **dulu** lalu
+  `<span class="absolute ...">` agar ikon (elemen absolut) tergambar di atas input statis —
+  tanpa perlu `z-index`. Ikon pakai warna `text-base-content/50` agar cukup terlihat.
+- Tiru pola ini bila membuat form/auth serupa.
+
+---
+
+## 5. Konvensi & Catatan Arsitektur
+
+- **Livewire 4 Volt SFC** adalah cara utama render halaman. Deklarasi:
+  `<?php new class extends Component { public function render() { return $this->view()->layout('layouts::x'); } } ?>` lalu markup Blade. File prefix `⚡`.
+- **Alpine.js** hanya interaksi client ringan (theme switcher). State penting di server.
+- **daisyUI 5 + Tailwind v4** wajib untuk UI.
+- **Theme switcher** (`themeSwitcher` Alpine) di `<html>`; nilai `corporate`/`luxury` di
+  `localStorage`. Desain harus adaptif kedua tema (pakai `--color-primary`/`--color-secondary`).
+- **Model `User`**: `HasRoles` (spatie) + `SoftDeletes`; atribut `#[Fillable]`/`#[Hidden]`
+  pakai PHP 8 attribute (bukan `$fillable`). Password auto-hashed via cast.
+- **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
+- **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
+- **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
+
+---
+
+## 6. Database
+
+- MySQL `proyek`. `SESSION_DRIVER=database`, `QUEUE_CONNECTION=database`,
+  `CACHE_STORE=database` (tabel `sessions`, `jobs`, `cache`, `failed_jobs` sudah ada).
+- Tabel spatie permission sudah ada.
+- Pastikan MySQL (XAMPP) jalan di 3306 sebelum `php artisan` yang menyentuh DB.
+
+---
+
+## 7. TODO / Yang Belum Ada
+
+- **Register** belum ada — user dibuat via tinker/seeder. (Login/logout sudah jalan.)
+- Area admin (`admin::main`) masih placeholder; layout drawer+sidebar+navbar sudah ada.
+- File **orphan** (bisa dihapus bila tak dipakai): `app/Http/Controllers/MainController.php`,
+  `resources/views/main.blade.php`, `resources/views/welcome.blade.php`.
+
+---
+
+## 8. Panduan AI Agent (Onboarding)
+
+Bagian ini wajib dibaca agent di **setiap sesi** agar konsisten dengan pola project.
+
+### 8.1 Pola yang berlaku (patterns)
+
+1. **Halaman = Livewire Volt SFC**, bukan controller. Tambah rute dengan `Route::livewire()`.
+2. **UI = daisyUI 5** (kelas `btn`, `card`, `badge`, `table`, dll). Hindari CSS vanila.
+3. **Animasi = atribut `data-motion`**; extend di `motion/animations.js`, bukan inline JS.
+4. **Brand = `config('main_config.*')`**, bukan string hardcode.
+5. **State & auth di server** (Livewire/`Auth`). Client hanya Alpine ringan.
+6. **Theme adaptif**: semua warna pakai token daisyUI (`primary`, `secondary`, `base-content`).
+7. **Ikons = `<x-lucide-*>`**, bukan emoji, untuk kesan tech/rapi.
+
+### 8.2 Adaptasi yang harus dilakukan model
+
+- Saat membuat komponen/UI baru: tiru struktur `pages/⚡main.blade.php` & `layouts/*`
+  (Volt + `->layout()`, daisyUI, `data-motion`).
+- Setelah ubah PHP: `vendor/bin/pint --format agent`.
+- Setelah ubah Blade/JS/CSS: `npm run build` (atau `npm run dev`) lalu cek visual.
+- Gunakan tools Boost bila relevan: `database-query`, `database-schema`, `search-docs`,
+  `get-absolute-url`.
+- Hormati `prefers-reduced-motion` (sudah ada helper di `animations.js`).
+- Jangan commit/ubah dependency tanpa konfirmasi user.
+
+### 8.3 Pertanyaan konfirmasi (tanya dulu, jangan asumsi)
+
+Sebelum implementasi non-trivial, tanyakan (satu per satu, beri opsi + rekomendasi):
+- **Scope**: fitur mana yang dikerjakan? (mis. auth → login/logout saja atau + register?)
+- **Proteksi & akses**: route perlu middleware `auth`/`guest`? Siapa boleh akses?
+- **Layout**: pakai layout existing (`public`/`app`/`auth`) atau buat baru?
+- **Dependency/paket**: perlu tambah npm/composer package? (wajib persetujuan)
+- **Tone/visual**: kalau menyentut UI — terang/gelap/adaptif? brand/warna apa?
+- **Data**: butuh migrasi/seed baru? butuh factory untuk test?
+
+### 8.4 Konsep web project ini
+
+- **Monolit Laravel + Livewire SPA-like**: navigasi terasa SPA via `wire:navigate`, tapi
+  server-side rendering penuh (tidak ada API terpisah, kecuali diputuskan lain).
+- **Guard `web` session-based**; auth manual (`Auth::attempt`/`login`/`logout`), bukan starter kit.
+- **Dua tema** (`corporate`/`luxury`) dengan toggle; desain harus enak di keduanya.
+- **Asset Vite**: `@vite` di layout; JS entry `resources/js/app.js` init Alpine+Motion+Swiper.
+- **Testing in-memory sqlite** (phpunit.xml) dengan `RefreshDatabase`; factory untuk model.
+
+### 8.5 Checklist sesi pertama
+
+1. Baca `AGENTS.md` + file ini + `.ai/rules` (jika ada).
+2. `php artisan route:list` — pahami rute & middleware.
+3. `php artisan config:show` / cek `config/main_config.php`, `config/livewire.php`.
+4. Inspect `layouts/*` & `pages/⚡main.blade.php` untuk pola UI.
+5. `php artisan test --compact` — pastikan baseline hijau sebelum ubah kode.
+
+---
+
+## 9. Catatan untuk AI Agent
+
+- Selalu baca `AGENTS.md` dan `.ai/rules` sebelum mengubah kode.
+- Gunakan `php artisan make:` untuk file baru.
+- Setelah ubah PHP: `vendor/bin/pint --format agent`.
+- Build frontend setelah ubah Blade/JS/CSS.
+- Tools Boost (`database-query`, `database-schema`, `search-docs`, `get-absolute-url`) bila relevan.

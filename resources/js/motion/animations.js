@@ -1336,6 +1336,218 @@ export function blurScale(element, options = {}) {
     };
 }
 
+/**
+ * -------------------------------------------------------
+ * 32. Gradient Pan
+ * -------------------------------------------------------
+ *
+ * Elemen dengan background gradient (background-size 200%) dipan
+ * secara perlahan & berulang untuk kesan "aurora" hidup.
+ *
+ * data-motion="gradient-pan"
+ */
+export function gradientPan(element, options = {}) {
+    const { duration = 9 } = options;
+
+    if (prefersReducedMotion()) {
+        return () => {};
+    }
+
+    const animation = animate(
+        element,
+        {
+            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+        },
+        {
+            duration,
+            repeat: Infinity,
+            ease: "linear",
+        },
+    );
+
+    return () => {
+        animation?.stop();
+        element.style.backgroundPosition = "";
+    };
+}
+
+/**
+ * -------------------------------------------------------
+ * 33. Glow Pulse
+ * -------------------------------------------------------
+ *
+ * Napas glow netral (box-shadow) yang aman di segala tema.
+ *
+ * data-motion="glow-pulse"
+ */
+export function glowPulse(element, options = {}) {
+    const token = element.dataset.motionGlow ?? options.glow ?? "primary";
+    const duration = Number(
+        element.dataset.motionDuration ?? options.duration ?? 4.5,
+    );
+
+    if (prefersReducedMotion()) {
+        return () => {};
+    }
+
+    const known = new Set([
+        "primary",
+        "secondary",
+        "accent",
+        "neutral",
+        "base-content",
+        "base-100",
+        "base-200",
+        "base-300",
+        "info",
+        "success",
+        "warning",
+        "error",
+    ]);
+
+    const colorRef = token.startsWith("--")
+        ? `var(${token})`
+        : known.has(token)
+          ? `var(--color-${token})`
+          : token;
+
+    const glow = (pct) =>
+        `0 0 ${28 + pct * 16}px ${2 + pct * 4}px ` +
+        `color-mix(in oklch, ${colorRef} ${Math.round(pct * 45)}%, transparent)`;
+
+    const animation = animate(
+        element,
+        {
+            boxShadow: [glow(0), glow(1), glow(0)],
+        },
+        {
+            duration,
+            repeat: Infinity,
+            ease: "easeInOut",
+        },
+    );
+
+    return () => {
+        animation?.stop();
+        element.style.boxShadow = "";
+    };
+}
+
+/**
+ * -------------------------------------------------------
+ * 34. Count Up
+ * -------------------------------------------------------
+ *
+ * Hitung angka dari 0 → nilai `data-motion-to` saat masuk viewport.
+ * Opsi: `data-motion-decimals` (default 0), `data-motion-suffix`
+ * (mis. "rb+", "%").
+ *
+ * data-motion="count-up"
+ */
+export function countUp(element, options = {}) {
+    const to = Number(element.dataset.motionTo ?? options.to ?? 0);
+    const decimals = Number(
+        element.dataset.motionDecimals ?? options.decimals ?? 0,
+    );
+    const suffix = element.dataset.motionSuffix ?? options.suffix ?? "";
+    const duration = Number(options.duration ?? 1.4);
+
+    const format = (value) =>
+        decimals > 0
+            ? Number(value).toFixed(decimals)
+            : Math.round(value).toLocaleString("id-ID");
+
+    if (prefersReducedMotion()) {
+        element.textContent = format(to) + suffix;
+
+        return () => {};
+    }
+
+    let animation = null;
+
+    const stopInView = inView(element, () => {
+        animation = animate(0, to, {
+            duration,
+            ease: "easeOut",
+            onUpdate: (value) => {
+                element.textContent = format(value) + suffix;
+            },
+        });
+    });
+
+    return () => {
+        stopInView?.();
+        animation?.stop?.();
+        element.textContent = format(to) + suffix;
+    };
+}
+
+/**
+ * -------------------------------------------------------
+ * 35. Tilt 3D
+ * -------------------------------------------------------
+ *
+ * Kartu mengikuti kursor (rotateX/rotateY) untuk kesan "tech".
+ * Reset halus saat kursor keluar. Hormati reduced-motion.
+ *
+ * data-motion="tilt-3d"
+ */
+export function tilt3d(element, options = {}) {
+    const max = Number(options.max ?? 8);
+
+    if (prefersReducedMotion()) {
+        return () => {};
+    }
+
+    if (element.parentElement) {
+        element.parentElement.style.perspective = "900px";
+    }
+
+    element.style.transformStyle = "preserve-3d";
+    element.style.willChange = "transform";
+
+    let animation = null;
+
+    const onMove = (event) => {
+        const rect = element.getBoundingClientRect();
+        const px = (event.clientX - rect.left) / rect.width - 0.5;
+        const py = (event.clientY - rect.top) / rect.height - 0.5;
+
+        animation?.stop();
+        animation = animate(
+            element,
+            {
+                rotateY: px * max * 2,
+                rotateX: -py * max * 2,
+            },
+            { type: "spring", stiffness: 200, damping: 18 },
+        );
+    };
+
+    const onLeave = () => {
+        animation?.stop();
+        animation = animate(
+            element,
+            { rotateX: 0, rotateY: 0 },
+            { type: "spring", stiffness: 150, damping: 18 },
+        );
+    };
+
+    element.addEventListener("pointermove", onMove);
+    element.addEventListener("pointerleave", onLeave);
+
+    return () => {
+        element.removeEventListener("pointermove", onMove);
+        element.removeEventListener("pointerleave", onLeave);
+        animation?.stop();
+        element.style.transformStyle = "";
+        element.style.willChange = "none";
+        if (element.parentElement) {
+            element.parentElement.style.perspective = "none";
+        }
+    };
+}
+
 export function splash(element, options = {}) {
     const { duration = 0.6, delay = 1 } = options;
 
