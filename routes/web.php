@@ -1,20 +1,24 @@
 <?php
 
 use App\Http\Controllers\MainController;
+use App\Livewire\Auth\Login;
+use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
+use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
+use App\Livewire\Pages\Main;
 use Illuminate\Support\Facades\Route;
 
-Route::livewire('/', 'pages::main')->name('main');
+Route::livewire('/', Main::class)->name('main');
 
 Route::middleware('guest')->group(function () {
-    Route::livewire('/login', 'auth::login')->name('login');
+    Route::livewire('/login', Login::class)->name('login');
 });
 
 Route::post('/logout', [MainController::class, 'logout'])->name('logout')->middleware('auth');
 
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
-    Route::livewire('/', 'admin::main')->name('main');
+Route::middleware('auth')->group(function () {
+    Route::livewire('/dashboard', DashboardMainIndex::class)->name('dashboard');
 
     Route::prefix('master-data')->group(function () {
-        Route::livewire('/pengguna', 'admin::master-data.pengguna.main-index')->name('pengguna.index');
+        Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
     });
 });

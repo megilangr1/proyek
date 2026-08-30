@@ -23,11 +23,13 @@
                 Halaman Utama
             </a>
         </li>
+
         <li>
-            <a href="{{ '#' }}" wire:current="menu-active" wire:navigate>
+            <a href="{{ route('dashboard') }}" wire:current="menu-active" wire:navigate>
                 Dashboard
             </a>
         </li>
+
         <li>
             <details {{ request()->is('master-data/*') ? 'open' : '' }}>
                 <summary class="{{ request()->is('master-data/*') ? 'bg-neutral text-white' : '' }}">
@@ -35,18 +37,12 @@
                 </summary>
                 <ul class="mt-1">
                     <li>
-                        <a href="{{ route('admin.pengguna.index') }}" wire:current="menu-active" wire:navigate>
+                        <a href="{{ route('pengguna.index') }}" wire:current="menu-active" wire:navigate>
                             Akun Pengguna
                         </a>
                     </li>
                 </ul>
             </details>
-        </li>
-
-        <li>
-            <a href="{{ '#' }}" wire:current="menu-active" wire:navigate>
-                Dummy
-            </a>
         </li>
     </ul>
 

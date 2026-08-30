@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Auth\Login;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -10,10 +11,10 @@ test('login page can be rendered', function () {
 test('users can authenticate', function () {
     $user = User::factory()->create(['password' => 'password']);
 
-    Livewire::test('auth::login')
+    Livewire::test(Login::class)
         ->set(['email' => $user->email, 'password' => 'password'])
         ->call('login')
-        ->assertRedirectToRoute('admin.main');
+        ->assertRedirectToRoute('dashboard');
 
     $this->assertAuthenticated();
 });
@@ -21,7 +22,7 @@ test('users can authenticate', function () {
 test('users cannot authenticate with invalid password', function () {
     $user = User::factory()->create(['password' => 'password']);
 
-    Livewire::test('auth::login')
+    Livewire::test(Login::class)
         ->set(['email' => $user->email, 'password' => 'wrong-password'])
         ->call('login')
         ->assertHasErrors('email')
@@ -31,7 +32,7 @@ test('users cannot authenticate with invalid password', function () {
 });
 
 test('users cannot authenticate with missing fields', function () {
-    Livewire::test('auth::login')
+    Livewire::test(Login::class)
         ->set(['email' => '', 'password' => ''])
         ->call('login')
         ->assertHasErrors(['email', 'password']);
@@ -40,11 +41,11 @@ test('users cannot authenticate with missing fields', function () {
 test('authenticated users cannot view login', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user)->get('/login')->assertRedirect('/');
+    $this->actingAs($user)->get('/login')->assertRedirectToRoute('dashboard');
 });
 
-test('guests cannot view admin', function () {
-    $this->get('/admin')->assertRedirect('/login');
+test('guests cannot view dashboard', function () {
+    $this->get('/dashboard')->assertRedirect('/login');
 });
 
 test('users can logout', function () {

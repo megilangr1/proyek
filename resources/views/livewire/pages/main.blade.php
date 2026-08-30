@@ -1,15 +1,3 @@
-<?php
-
-use Livewire\Component;
-
-new class extends Component {
-    public function render()
-    {
-        return $this->view()->layout('layouts::public');
-    }
-};
-?>
-
 <div id="home" class="overflow-hidden">
 
     {{-- ===================== HERO ===================== --}}
@@ -18,19 +6,18 @@ new class extends Component {
             <div class="bg-grid absolute inset-0 opacity-60"></div>
             <div data-motion="scroll-parallax" data-motion-speed="0.15"
                 class="bg-aurora absolute -top-40 -right-24 h-[28rem] w-[28rem] opacity-50"></div>
-            <div data-motion="gradient-pan"
-                class="bg-aurora absolute top-48 -left-32 h-96 w-96 opacity-40"></div>
+            <div data-motion="gradient-pan" class="bg-aurora absolute top-48 -left-32 h-96 w-96 opacity-40"></div>
         </div>
 
         <div class="hero min-h-[88vh]">
             <div class="hero-content flex-col-reverse gap-12 max-w-6xl w-full py-16 lg:flex-row-reverse">
                 <div class="w-full flex-1" data-motion="float-in">
-                    <div class="glass-card--primary rounded-2xl p-2 shadow-2xl" data-motion="glow-pulse" data-motion-glow="primary" data-motion-duration="4.5">
+                    <div class="glass-card--primary rounded-2xl p-2 shadow-2xl" data-motion="glow-pulse"
+                        data-motion-glow="primary" data-motion-duration="4.5">
                         <div class="rounded-xl bg-base-100 p-6">
                             <div class="mb-4 flex items-center justify-between">
                                 <div class="flex items-center gap-2">
-                                    <img src="{{ asset('img/logo.png') }}" alt="logo"
-                                        class="h-7 w-7 rounded-md" />
+                                    <img src="{{ asset('img/logo.png') }}" alt="logo" class="h-7 w-7 rounded-md" />
                                     <div>
                                         <p class="text-sm opacity-60">Rekap Bulanan</p>
                                         <p class="text-sm font-bold">Mei 2026</p>
@@ -97,8 +84,7 @@ new class extends Component {
                         Pendataan dan Rekap <span class="text-gradient">Pintar</span>
                     </h1>
 
-                    <p data-motion="fade-up" data-motion-delay="0.2"
-                        class="mt-6 max-w-xl text-lg text-base-content/70">
+                    <p data-motion="fade-up" data-motion-delay="0.2" class="mt-6 max-w-xl text-lg text-base-content/70">
                         Catat, kelola, dan rekap data Anda secara otomatis. Hemat waktu, kurangi
                         kesalahan, dan dapatkan laporan yang rapi hanya dalam beberapa klik.
                     </p>
@@ -149,7 +135,8 @@ new class extends Component {
         <div data-motion="stagger" class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div class="glass-card rounded-2xl" data-motion="tilt-3d">
                 <div class="card-body">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 text-primary">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary">
                         <x-lucide-clipboard-list class="h-6 w-6" />
                     </div>
                     <h3 class="card-title">Input Cepat & Mudah</h3>
@@ -159,17 +146,20 @@ new class extends Component {
             </div>
             <div class="glass-card rounded-2xl" data-motion="tilt-3d">
                 <div class="card-body">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 text-primary">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary">
                         <x-lucide-zap class="h-6 w-6" />
                     </div>
                     <h3 class="card-title">Rekap Otomatis</h3>
-                    <p class="text-base-content/70">Data langsung diolah menjadi ringkasan, grafik, dan tren tanpa perlu
+                    <p class="text-base-content/70">Data langsung diolah menjadi ringkasan, grafik, dan tren tanpa
+                        perlu
                         hitung manual.</p>
                 </div>
             </div>
             <div class="glass-card rounded-2xl" data-motion="tilt-3d">
                 <div class="card-body">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 text-primary">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary">
                         <x-lucide-file-bar-chart class="h-6 w-6" />
                     </div>
                     <h3 class="card-title">Laporan Fleksibel</h3>
@@ -179,7 +169,8 @@ new class extends Component {
             </div>
             <div class="glass-card rounded-2xl" data-motion="tilt-3d">
                 <div class="card-body">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 text-primary">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary">
                         <x-lucide-shield-check class="h-6 w-6" />
                     </div>
                     <h3 class="card-title">Aman & Terpusat</h3>
@@ -189,7 +180,8 @@ new class extends Component {
             </div>
             <div class="glass-card rounded-2xl" data-motion="tilt-3d">
                 <div class="card-body">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 text-primary">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary">
                         <x-lucide-users class="h-6 w-6" />
                     </div>
                     <h3 class="card-title">Kolaborasi Tim</h3>
@@ -199,7 +191,8 @@ new class extends Component {
             </div>
             <div class="glass-card rounded-2xl" data-motion="tilt-3d">
                 <div class="card-body">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/15 text-primary">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary">
                         <x-lucide-smartphone class="h-6 w-6" />
                     </div>
                     <h3 class="card-title">Akses Di Mana Saja</h3>
@@ -388,7 +381,7 @@ new class extends Component {
     {{-- ===================== CTA ===================== --}}
     <section id="cta" class="max-w-6xl mx-auto px-4 pb-24">
         <div data-motion="blur-scale"
-            class="rounded-3xl bg-gradient-to-r from-primary via-secondary to-primary p-[2px] shadow-xl">
+            class="rounded-3xl bg-linear-to-r from-primary via-secondary to-primary p-0.5 shadow-xl">
             <div class="card rounded-3xl border-0 bg-primary text-primary-content">
                 <div class="card-body items-center gap-6 py-16 text-center">
                     <img src="{{ asset('img/logo.png') }}" alt="{{ config('main_config.short_name') }}"
@@ -398,7 +391,7 @@ new class extends Component {
                         Mulai gratis dan rasakan betapa mudahnya pendataan dan rekap yang pintar.
                     </p>
                     <div class="mt-2 flex flex-wrap justify-center gap-4">
-                        <a href="{{ route('admin.main') }}" class="btn btn-secondary btn-lg" data-motion="hover-lift"
+                        <a href="{{ route('dashboard') }}" class="btn btn-secondary btn-lg" data-motion="hover-lift"
                             wire:navigate>
                             Mulai Gratis
                         </a>

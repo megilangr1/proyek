@@ -13,7 +13,7 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 - **Jenis:** Aplikasi web Laravel monolitik dengan UI reaktif server-side (Livewire)
 - **URL lokal:** http://proyek.test (di-serve Laravel Herd; lihat `AGENTS.md` → herd)
 - **Status:** Sudah migrasi, build, auth (login/logout) jalan, landing page sudah direfactor
-  (glassmorphism + Motion + Lucide). Area admin masih kerangka.
+  (glassmorphism + Motion + Lucide). Dashboard sudah ada (kerangka); area master-data mulai diisi.
 
 ---
 
@@ -23,12 +23,14 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 |-------|-----------|
 | Framework | Laravel 13 (PHP 8.4) |
 | Bahasa | PHP 8.4 |
-| UI reaktif (server) | Livewire 4 — full-page / single-file "Volt" components (prefix `⚡`) |
+| UI reaktif (server) | Livewire 4 — class-based components (`App\Livewire`, views di `resources/views/livewire`) |
 | UI interaktif (client) | Alpine.js (`resources/js/alpine`) |
 | Styling | Tailwind CSS v4 + daisyUI 5 (theme `corporate` default, `luxury` dark) |
 | Font | **Outfit** via Bunny Fonts CDN |
 | Animasi | Motion (`resources/js/motion`) — engine `data-motion` |
 | Carousel | Swiper (`resources/js/components/swiper`) |
+| Dialog/alert | SweetAlert2 (`sweetalert2`) — `window.Swal` / `window.deleteSwal` / `window.Toast` |
+| Select | Tom Select (`tom-select`) — init via `initTomSelect()` di `layouts/script.blade.php` |
 | Icon | Lucide (`mallardduck/blade-lucide-icons` → `<x-lucide-*>`) |
 | Auth & otorisasi | Laravel built-in (`Auth::attempt`/`login`/`logout`) + spatie/laravel-permission v8 |
 | Database | MySQL (`proyek`, 127.0.0.1:3306, user `root`, tanpa password) |
@@ -37,7 +39,7 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 | Formatting | Laravel Pint |
 | AI tooling | Laravel Boost (`laravel/boost`) |
 
-> Tidak ada starter kit (Breeze/Jetstream). Auth di-hand-roll via Livewire Volt + facade `Auth`.
+> Tidak ada starter kit (Breeze/Jetstream). Auth di-hand-roll via Livewire class component + facade `Auth`.
 
 ---
 
@@ -62,21 +64,33 @@ php artisan test --compact
 
 ```
 app/
-  Http/Controllers/MainController.php   # ORPHAN (import sudah dihapus dari routes)
-  Models/User.php                       # Authenticatable + HasRoles + SoftDeletes
+  Http/Controllers/MainController.php   # dipakai route logout (POST /logout)
+  Livewire/                             # class components (namespace App\Livewire)
+    Pages/Main.php                      # GET /            -> layouts.public  (landing)
+    Auth/Login.php                      # GET /login       -> layouts.auth
+    Dashboard/MainIndex.php             # GET /dashboard    -> layouts.app
+    MasterData/Pengguna/MainIndex.php   # GET /pengguna     -> layouts.app
+  Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
+  Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
+  View/Components/                      # reusable Blade components (class-backed)
+    Main/PageHeader.php                 # <x-main.page-header title="...">
+    Table/Th.php                        # <x-table.th ...> (header tabel sortable)
 config/
-  livewire.php                          # component_namespaces: layouts, pages, admin, auth
+  livewire.php                          # make_command.type => 'class'; emoji => false; class_namespace App\Livewire
   main_config.php                       # branding (name, short_name, tagline, description)
-routes/web.php                          # Route::livewire() + logout POST
+routes/web.php                          # Route::livewire(FQCN) + logout POST
 resources/views/
-  pages/⚡main.blade.php                 # GET /  -> pages::main (layouts::public) — landing
-  auth/⚡login.blade.php                 # GET /login -> auth::login (layouts::auth)
-  admin/⚡main.blade.php                # GET /admin -> admin::main (layouts::app)
-  main.blade.php                        # ORPHAN (pakai pages::main)
-  welcome.blade.php                     # ORPHAN (default Laravel)
+  livewire/                             # blade views untuk class components
+    pages/main.blade.php
+    auth/login.blade.php
+    dashboard/main-index.blade.php
+    master-data/pengguna/main-index.blade.php
+  components/                           # blade views untuk App\View\Components
+    main/page-header.blade.php
+    table/th.blade.php
   layouts/
     public.blade.php                    # layout landing (navbar+footer+theme toggle)
-    app.blade.php                       # DEFAULT Livewire layout (drawer+sidebar+navbar)
+    app.blade.php                       # DEFAULT admin layout (drawer+sidebar+navbar)
     auth.blade.php                      # layout login (card centered)
     navbar.blade.php / sidebar.blade.php
   js/
@@ -91,23 +105,34 @@ public/img/logo.png                    # logo brand
 ### 4.1 Routing (Livewire full-page)
 
 ```php
-Route::livewire('/', 'pages::main')->name('main');
+use App\Http\Controllers\MainController;
+use App\Livewire\Auth\Login;
+use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
+use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
+use App\Livewire\Pages\Main;
+use Illuminate\Support\Facades\Route;
+
+Route::livewire('/', Main::class)->name('main');
 
 Route::middleware('guest')->group(function () {
-    Route::livewire('/login', 'auth::login')->name('login');
+    Route::livewire('/login', Login::class)->name('login');
 });
 
-Route::post('/logout', fn (Request $r) => /* Auth::logout + invalidate + regenerateToken */)
-    ->name('logout')->middleware('auth');
+Route::post('/logout', [MainController::class, 'logout'])->name('logout')->middleware('auth');
 
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
-    Route::livewire('/', 'admin::main')->name('main');
+Route::middleware('auth')->group(function () {
+    Route::livewire('/dashboard', DashboardMainIndex::class)->name('dashboard');
+
+    Route::prefix('master-data')->group(function () {
+        Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
+    });
 });
 ```
 
-- Namespace `auth` → `resources/views/auth`. Komponen SFC diakses sebagai `auth::login`.
+- Komponen Livewire berupa class di `App\Livewire` (view terpisah di `resources/views/livewire`).
+  `Route::livewire()` menerima FQCN class, mis. `Login::class`.
 - Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
-  logout via route POST. `/admin` wajib login; `/login` hanya untuk guest.
+  logout via route POST. `/dashboard` & `/pengguna` wajib login; `/login` hanya untuk guest.
 - Perlu rute/guard baru? Pakai middleware `auth`/`guest` dan `Route::livewire()`.
 
 ### 4.2 Branding (config-driven)
@@ -158,7 +183,7 @@ di-link.
 
 ### 4.6 Antarmuka Login (`auth`)
 
-Halaman login (`auth::login` + `layouts/auth.blade.php`) sudah dipercantik selaras dengan
+Halaman login (`App\Livewire\Auth\Login` + `layouts/auth.blade.php`) sudah dipercantik selaras dengan
 landing page (estetika glass / mewah / tech):
 - **Layout `auth.blade.php`**: background `bg-grid` + `bg-aurora` (`data-motion="gradient-pan"`
   & `scroll-parallax`), card di-center (`max-w-md`).
@@ -171,18 +196,35 @@ landing page (estetika glass / mewah / tech):
   tanpa perlu `z-index`. Ikon pakai warna `text-base-content/50` agar cukup terlihat.
 - Tiru pola ini bila membuat form/auth serupa.
 
+### 4.7 Komponen Blade (View Components)
+
+UI yang berulang diekstrak jadi Blade component **class-backed** (`App\View\Components`),
+dipanggil via tag `<x-...>` (bukan inline di view):
+
+- `<x-main.page-header title="...">` — judul halaman + slot aksi kanan
+  (`app/View/Components/Main/PageHeader.php` + `resources/views/components/main/page-header.blade.php`).
+- `<x-table.th label="..." field="..." :order-by="$order_by" :order-type="$order_type">`
+  — header kolom sortable; men-dispatch event `setOrderBy` saat diklik
+  (`app/View/Components/Table/Th.php` + `resources/views/components/table/th.blade.php`).
+
+Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class di
+`app/View/Components`, blade di `resources/views/components`).
+
 ---
 
 ## 5. Konvensi & Catatan Arsitektur
 
-- **Livewire 4 Volt SFC** adalah cara utama render halaman. Deklarasi:
-  `<?php new class extends Component { public function render() { return $this->view()->layout('layouts::x'); } } ?>` lalu markup Blade. File prefix `⚡`.
+- **Livewire 4 class component** adalah cara utama render halaman. Class di `App\Livewire` (view
+  terpisah di `resources/views/livewire`), layout diikat via atribut `#[Layout('layouts.x')]`.
 - **Alpine.js** hanya interaksi client ringan (theme switcher). State penting di server.
 - **daisyUI 5 + Tailwind v4** wajib untuk UI.
+- **Komponen Blade berulang** diekstrak jadi `App\View\Components` (lihat §4.7), bukan
+  di-copy-paste antar view.
 - **Theme switcher** (`themeSwitcher` Alpine) di `<html>`; nilai `corporate`/`luxury` di
   `localStorage`. Desain harus adaptif kedua tema (pakai `--color-primary`/`--color-secondary`).
 - **Model `User`**: `HasRoles` (spatie) + `SoftDeletes`; atribut `#[Fillable]`/`#[Hidden]`
-  pakai PHP 8 attribute (bukan `$fillable`). Password auto-hashed via cast.
+  pakai PHP 8 attribute (bukan `$fillable`). Password auto-hashed via cast. Helper: `isAdmin()`
+  (role `administrator`/`meggi`), `isOperator()` (role `operator`), `user_role` (akses role pertama).
 - **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
 - **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
 - **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
@@ -201,9 +243,9 @@ landing page (estetika glass / mewah / tech):
 ## 7. TODO / Yang Belum Ada
 
 - **Register** belum ada — user dibuat via tinker/seeder. (Login/logout sudah jalan.)
-- Area admin (`admin::main`) masih placeholder; layout drawer+sidebar+navbar sudah ada.
-- File **orphan** (bisa dihapus bila tak dipakai): `app/Http/Controllers/MainController.php`,
-  `resources/views/main.blade.php`, `resources/views/welcome.blade.php`.
+- Dashboard (`dashboard`) masih kerangka; layout drawer+sidebar+navbar sudah ada.
+- `app/Http/Controllers/MainController.php` masih dipakai untuk route `logout` (POST `/logout`);
+  bukan orphan. File `resources/views/main.blade.php` & `welcome.blade.php` sudah dihapus.
 
 ---
 
@@ -213,18 +255,20 @@ Bagian ini wajib dibaca agent di **setiap sesi** agar konsisten dengan pola proj
 
 ### 8.1 Pola yang berlaku (patterns)
 
-1. **Halaman = Livewire Volt SFC**, bukan controller. Tambah rute dengan `Route::livewire()`.
+1. **Halaman = Livewire class component** (`App\Livewire`), bukan controller. Tambah rute dengan `Route::livewire()`.
 2. **UI = daisyUI 5** (kelas `btn`, `card`, `badge`, `table`, dll). Hindari CSS vanila.
 3. **Animasi = atribut `data-motion`**; extend di `motion/animations.js`, bukan inline JS.
 4. **Brand = `config('main_config.*')`**, bukan string hardcode.
 5. **State & auth di server** (Livewire/`Auth`). Client hanya Alpine ringan.
 6. **Theme adaptif**: semua warna pakai token daisyUI (`primary`, `secondary`, `base-content`).
 7. **Ikons = `<x-lucide-*>`**, bukan emoji, untuk kesan tech/rapi.
+8. **Komponen berulang = `App\View\Components`** (lihat §4.7), dipakai via tag `<x-...>`,
+   bukan di-copy-paste antar view.
 
 ### 8.2 Adaptasi yang harus dilakukan model
 
-- Saat membuat komponen/UI baru: tiru struktur `pages/⚡main.blade.php` & `layouts/*`
-  (Volt + `->layout()`, daisyUI, `data-motion`).
+- Saat membuat komponen/UI baru: tiru struktur `app/Livewire/Pages/Main.php` + view
+  `resources/views/livewire/pages/main.blade.php` & `layouts/*` (class + `#[Layout]`, daisyUI, `data-motion`).
 - Setelah ubah PHP: `vendor/bin/pint --format agent`.
 - Setelah ubah Blade/JS/CSS: `npm run build` (atau `npm run dev`) lalu cek visual.
 - Gunakan tools Boost bila relevan: `database-query`, `database-schema`, `search-docs`,
@@ -256,7 +300,7 @@ Sebelum implementasi non-trivial, tanyakan (satu per satu, beri opsi + rekomenda
 1. Baca `AGENTS.md` + file ini + `.ai/rules` (jika ada).
 2. `php artisan route:list` — pahami rute & middleware.
 3. `php artisan config:show` / cek `config/main_config.php`, `config/livewire.php`.
-4. Inspect `layouts/*` & `pages/⚡main.blade.php` untuk pola UI.
+4. Inspect `app/Livewire/Pages/Main.php` + `resources/views/livewire/pages/main.blade.php` & `layouts/*` untuk pola UI.
 5. `php artisan test --compact` — pastikan baseline hijau sebelum ubah kode.
 
 ---
@@ -268,3 +312,111 @@ Sebelum implementasi non-trivial, tanyakan (satu per satu, beri opsi + rekomenda
 - Setelah ubah PHP: `vendor/bin/pint --format agent`.
 - Build frontend setelah ubah Blade/JS/CSS.
 - Tools Boost (`database-query`, `database-schema`, `search-docs`, `get-absolute-url`) bila relevan.
+
+---
+
+## 10. Pola CRUD Livewire (Referensi: Manajemen Pengguna)
+
+Ini adalah **pola kanonik** untuk fitur CRUD di project ini. Segala CRUD baru
+(user, role, post, dll) **wajib mengikuti konsep yang sama** agar konsisten.
+Referensi utama: `app/Livewire/MasterData/Pengguna/MainIndex.php` +
+`resources/views/livewire/master-data/pengguna/main-index.blade.php`.
+
+### 10.1 Struktur class component
+
+- Namespace `App\Livewire\MasterData\<Fitur>\...`, class `MainIndex` (atau
+  `<Fitur>Index`). View terpisah di `resources/views/livewire/master-data/<fitur>/...`.
+- Layout diikat via `#[Layout('layouts.app')]` (admin). Jangan pakai `#[Layout]`
+  ganda (class + method) — method menang & bisa menunjuk view tak ada.
+- Semua properti **wajib di-type** (`bool`/`array`/`?Model`/`string`/`?string`) dan
+  method void pakai `: void`, `render(): View`.
+
+### 10.2 State & form (pola `state` array)
+
+- Satu properti `public array $state = []` menampung field form (bukan properti
+  `$name`, `$email`, ... per-field). Bind di view dengan `wire:model="state.name"`.
+- Template awal disimpan di `#[Locked] public array $params`; `showForm()` me-reset
+  `state` ke `params`.
+- Properti yang **tidak boleh diubah dari client** (form open/close flag, data statis,
+  baris sedang diedit) ditandai `#[Locked]` agar `wire:model` client tak bisa memanipulasi.
+- `editData` (model sedang diedit) juga `#[Locked]`; diisi lewat method server
+  (`doEdit`), bukan dari client.
+
+### 10.3 Otorisasi (defense-in-depth)
+
+Livewire **tidak menjalankan `mount()` pada request AJAX** (hanya saat load halaman).
+Maka guard akses HARUS ada di `mount()` **dan** di tiap method aksi mutasi.
+
+**Aturan:** pengambilan informasi user saat ini **selalu** lewat `MainHelper`, bukan
+`Auth::user()` langsung. Cek admin pakai `(new MainHelper)->userData()->isAdmin()`
+(`userData()` mereturn `User` ter-auth; `isAdmin()` ada di `App\Models\User`).
+
+```php
+private function ensureCanManage(): void
+{
+    abort_unless((new MainHelper)->userData()->isAdmin(), 403);
+}
+// dipanggil di mount(), doCreate(), doEdit(), doUpdate(), doDelete()
+// id user ter-auth: (new MainHelper)->userData()->id  (bukan Auth::id())
+```
+
+### 10.4 Siklus aksi (tambah/ubah/hapus)
+
+- `showForm(bool $open, bool $edit = false)` — buka/tutup form, isi `state` dari `editData`
+  bila edit. Dispatch event `setTomSelect` bila pakai Tom Select.
+- `actionForm()` — router: jika `editData` ter-set → `doUpdate()`, else `doCreate()`.
+- `doCreate()` / `doUpdate()` — `validate()` pada `state.*`, lalu tulis DB di dalam
+  `DB::transaction(fn () => ...)` (commit/rollback otomatis, hindari leak transaksi).
+  Pakai `Hash::make()` untuk password. `syncRoles()` untuk spatie role.
+- `doDelete(int $id)` — dengarkan event `#[On('doDelete')]`; guard self-delete
+  (`if ($id === Auth::id()) return;`), hapus dalam `DB::transaction`.
+- Notifikasi via `(new MainHelper)->doAlert($this, 'success'|'info'|'warning'|'error', $msg)`
+  → memicu event `toast` yang dirender oleh `Toast.fire` (lihat `resources/js/app.js`).
+
+### 10.5 Sorting & filter (URL-driven)
+
+Gunakan `#[Url(except: '')]` agar state bisa di-share via URL:
+
+```php
+#[Url(except: '')] public ?string $search = '';
+#[Url(except: '')] public string $order_by = 'created_at';
+#[Url(except: '')] public string $order_type = 'DESC';
+```
+
+- **Whitelist** kolom sort (`private const ALLOWED_SORT_COLUMNS`) & normalisasi
+  `order_type` ke `ASC`/`DESC` — `orderBy()` tidak escape nama kolom ⇒ rawan SQL
+  injection bila `order_by` langsung dari user.
+- `updatedSearch()` → `resetPage()` supaya filter reset ke halaman 1.
+- `setOrderBy(string $field)` (listener `#[On('setOrderBy')]) validasi field ke whitelist.
+
+### 10.6 View (konvensi Blade)
+
+- Form: `<form wire:submit="actionForm">`, field `wire:model="state.xxx"`,
+  error via `@error('state.xxx')`. Toggle form dengan `@if ($form) hidden @endif`.
+- Tombol edit: `wire:click="doEdit({{ $item->id }})"` (pakai **id**, bukan uuid).
+- Tombol hapus: `<button class="... delete-btn" data-id="{{ $item->id }}"
+  data-target="{{ $componentAlias }}">`. Penghapusan tidak memanggil method
+  langsung, tapi lewat konfirmasi `deleteSwal` (SweetAlert) → JS dispatch event.
+- Tabel: `{{ $data->onEachSide(1)->links() }}` (paginator dari `paginate(10)`).
+
+### 10.7 Wiring JS (delete)
+
+- `resources/views/layouts/script.blade.php`: listener klik `.delete-btn` membaca
+  `dataset.id` + `dataset.target`, lalu
+  `deleteSwal(() => Livewire.dispatchTo(compTarget, 'doDelete', { id }))`.
+- `resources/js/app.js`: `window.deleteSwal` (SweetAlert confirm → jalankan callback).
+- `data-target` = alias komponen penuh, mis. `master-data.pengguna.main-index`
+  (bukan suffix) agar `dispatchTo` sampai ke komponen.
+
+### 10.8 Testing
+
+- Feature test mengikuti `tests/Feature/UserCrudTest.php`:
+  - `actingAs($admin)` + `Livewire::test(MainIndex::class)`.
+  - Isi via `->set('state.name', ...)` lalu `->call('actionForm')` / `->call('doEdit', $id)`
+    / `->call('doDelete', $id)`.
+  - Otorisasi: `Livewire::actingAs($operator)->test(MainIndex::class)->assertForbidden()`.
+  - Self-delete: `->call('doDelete', $admin->id)` lalu assert masih ada.
+- `beforeEach` siapkan role spatie (`administrator`/`meggi`/`operator`).
+
+> **Checklist CRUD baru:** class + view + route (`Route::livewire` FQCN) + JS delete
+> wiring (bila ada hapus) + feature test. Jalankan `vendor/bin/pint` & `php artisan test`.
