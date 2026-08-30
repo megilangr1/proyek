@@ -70,8 +70,11 @@ app/
     Auth/Login.php                      # GET /login       -> layouts.auth
     Dashboard/MainIndex.php             # GET /dashboard    -> layouts.app
     MasterData/Pengguna/MainIndex.php   # GET /pengguna     -> layouts.app
+    MasterData/Proyek/MainIndex.php     # GET /proyek      -> layouts.app
   Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
   Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
+  Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes
+  Enum/StatusProyek.php                 # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   View/Components/                      # reusable Blade components (class-backed)
     Main/PageHeader.php                 # <x-main.page-header title="...">
     Table/Th.php                        # <x-table.th ...> (header tabel sortable)
@@ -79,12 +82,14 @@ config/
   livewire.php                          # make_command.type => 'class'; emoji => false; class_namespace App\Livewire
   main_config.php                       # branding (name, short_name, tagline, description)
 routes/web.php                          # Route::livewire(FQCN) + logout POST
+database/factories/ProyekFactory.php     # factory Proyek (tanggal terurut, kode PRJnnn)
 resources/views/
   livewire/                             # blade views untuk class components
     pages/main.blade.php
     auth/login.blade.php
     dashboard/main-index.blade.php
     master-data/pengguna/main-index.blade.php
+    master-data/proyek/main-index.blade.php
   components/                           # blade views untuk App\View\Components
     main/page-header.blade.php
     table/th.blade.php
@@ -109,6 +114,7 @@ use App\Http\Controllers\MainController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
 use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
+use App\Livewire\MasterData\Proyek\MainIndex as ProyekMainIndex;
 use App\Livewire\Pages\Main;
 use Illuminate\Support\Facades\Route;
 
@@ -125,6 +131,7 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('master-data')->group(function () {
         Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
+        Route::livewire('/proyek', ProyekMainIndex::class)->name('proyek.index');
     });
 });
 ```
@@ -132,7 +139,7 @@ Route::middleware('auth')->group(function () {
 - Komponen Livewire berupa class di `App\Livewire` (view terpisah di `resources/views/livewire`).
   `Route::livewire()` menerima FQCN class, mis. `Login::class`.
 - Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
-  logout via route POST. `/dashboard` & `/pengguna` wajib login; `/login` hanya untuk guest.
+  logout via route POST. `/dashboard`, `/pengguna` & `/proyek` wajib login; `/login` hanya untuk guest.
 - Perlu rute/guard baru? Pakai middleware `auth`/`guest` dan `Route::livewire()`.
 
 ### 4.2 Branding (config-driven)
@@ -225,6 +232,9 @@ Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class d
 - **Model `User`**: `HasRoles` (spatie) + `SoftDeletes`; atribut `#[Fillable]`/`#[Hidden]`
   pakai PHP 8 attribute (bukan `$fillable`). Password auto-hashed via cast. Helper: `isAdmin()`
   (role `administrator`/`meggi`), `isOperator()` (role `operator`), `user_role` (akses role pertama).
+- **Model `Proyek`**: `#[Fillable]`, `status` di-cast ke enum `App\Enum\StatusProyek`
+  (`AKTIF`/`NONAKTIF`); `HasFactory` + `SoftDeletes`. `kode_proyek` dibuat otomatis
+  (`PRJ001`…`PRJ999`) di `doCreate`, bukan diinput user.
 - **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
 - **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
 - **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
@@ -321,6 +331,11 @@ Ini adalah **pola kanonik** untuk fitur CRUD di project ini. Segala CRUD baru
 (user, role, post, dll) **wajib mengikuti konsep yang sama** agar konsisten.
 Referensi utama: `app/Livewire/MasterData/Pengguna/MainIndex.php` +
 `resources/views/livewire/master-data/pengguna/main-index.blade.php`.
+Contoh kedua (akses admin + operator, tanpa password/role):
+`app/Livewire/MasterData/Proyek/MainIndex.php` +
+`resources/views/livewire/master-data/proyek/main-index.blade.php`.
+`kode_proyek` dibuat otomatis (`PRJ001`…`PRJ999`, increment) via `generateKodeProyek()`
+di `doCreate` — tidak diinput user & tidak berubah saat edit.
 
 ### 10.1 Struktur class component
 
@@ -359,6 +374,8 @@ private function ensureCanManage(): void
 // dipanggil di mount(), doCreate(), doEdit(), doUpdate(), doDelete()
 // id user ter-auth: (new MainHelper)->userData()->id  (bukan Auth::id())
 ```
+- Varian akses: bila fitur juga boleh diakses operator (mis. Proyek), ganti cek
+  `isAdmin()` dengan `isAdmin() || isOperator()` (atau method helper serupa di `User`).
 
 ### 10.4 Siklus aksi (tambah/ubah/hapus)
 
@@ -369,7 +386,7 @@ private function ensureCanManage(): void
   `DB::transaction(fn () => ...)` (commit/rollback otomatis, hindari leak transaksi).
   Pakai `Hash::make()` untuk password. `syncRoles()` untuk spatie role.
 - `doDelete(int $id)` — dengarkan event `#[On('doDelete')]`; guard self-delete
-  (`if ($id === Auth::id()) return;`), hapus dalam `DB::transaction`.
+  (`if ($id === (new MainHelper)->userData()->id) return;`), hapus dalam `DB::transaction`.
 - Notifikasi via `(new MainHelper)->doAlert($this, 'success'|'info'|'warning'|'error', $msg)`
   → memicu event `toast` yang dirender oleh `Toast.fire` (lihat `resources/js/app.js`).
 
@@ -410,12 +427,15 @@ Gunakan `#[Url(except: '')]` agar state bisa di-share via URL:
 
 ### 10.8 Testing
 
-- Feature test mengikuti `tests/Feature/UserCrudTest.php`:
+- Feature test mengikuti `tests/Feature/UserCrudTest.php` (Pengguna) &
+  `tests/Feature/ProyekCrudTest.php` (Proyek):
   - `actingAs($admin)` + `Livewire::test(MainIndex::class)`.
-  - Isi via `->set('state.name', ...)` lalu `->call('actionForm')` / `->call('doEdit', $id)`
+  - Isi via `->set('state.nama_proyek', ...)` lalu `->call('actionForm')` / `->call('doEdit', $id)`
     / `->call('doDelete', $id)`.
-  - Otorisasi: `Livewire::actingAs($operator)->test(MainIndex::class)->assertForbidden()`.
-  - Self-delete: `->call('doDelete', $admin->id)` lalu assert masih ada.
+  - Otorisasi: user tanpa role `->test(MainIndex::class)->assertForbidden()`. Untuk fitur
+    admin+operator (Proyek), `operator` justru `->assertOk()` dan boleh CRUD.
+  - Self-delete hanya relevan untuk resource bertipe user (Pengguna): `->call('doDelete', $admin->id)`
+    lalu assert masih ada. Proyek tidak punya self-delete guard.
 - `beforeEach` siapkan role spatie (`administrator`/`meggi`/`operator`).
 
 > **Checklist CRUD baru:** class + view + route (`Route::livewire` FQCN) + JS delete

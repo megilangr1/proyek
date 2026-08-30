@@ -5,7 +5,7 @@
         <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
             <div class="bg-grid absolute inset-0 opacity-60"></div>
             <div data-motion="scroll-parallax" data-motion-speed="0.15"
-                class="bg-aurora absolute -top-40 -right-24 h-[28rem] w-[28rem] opacity-50"></div>
+                class="bg-aurora absolute -top-40 -right-24 h-112 w-md opacity-50"></div>
             <div data-motion="gradient-pan" class="bg-aurora absolute top-48 -left-32 h-96 w-96 opacity-40"></div>
         </div>
 

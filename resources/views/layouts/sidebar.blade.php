@@ -41,6 +41,11 @@
                             Akun Pengguna
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('proyek.index') }}" wire:current="menu-active" wire:navigate>
+                            Data Proyek
+                        </a>
+                    </li>
                 </ul>
             </details>
         </li>

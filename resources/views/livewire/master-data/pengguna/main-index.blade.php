@@ -270,7 +270,7 @@
                                     popovertarget="popover-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"
                                     class="btn btn-xs btn-outline w-full font-normal tracking-wider delete-btn"
                                     popovertarget="popover-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"
-                                    data-id="{{ $item->id }}" data-target="admin.master-data.pengguna.main-index">
+                                    data-id="{{ $item->id }}" data-target="master-data.pengguna.main-index">
                                     Hapus Data
                                 </button>
                             </div>
