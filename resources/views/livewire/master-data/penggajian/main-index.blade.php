@@ -25,24 +25,22 @@
                             <span class="text-red-500 text-xs">*</span>
                         </label>
                         <div class="relative">
-                            <select wire:model="state.proyek_id" id="proyek_id" name="proyek_id"
-                                class="w-full select @error('state.proyek_id') select-error @enderror"
-                                aria-describedby="proyek_id-helper" required autocomplete="false">
-                                <option disabled>Pilih Proyek</option>
-                                @foreach ($proyeks as $proyek)
-                                    <option value="{{ $proyek->id }}">{{ $proyek->nama_proyek }}</option>
-                                @endforeach
-                            </select>
-                            <div
-                                class="absolute inset-y-0 inset-e-6 {{ $errors->has('state.proyek_id') ? 'flex' : 'hidden' }} items-center pointer-events-none pe-3">
-                                <svg class="shrink-0 size-4 text-red-500" xmlns="http://www.w3.org/2000/svg"
-                                    width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" x2="12" y1="8" y2="12"></line>
-                                    <line x1="12" x2="12.01" y1="16" y2="16"></line>
-                                </svg>
+                            <input type="hidden" wire:model="state.proyek_id" id="proyek_id" name="proyek_id">
+                            <div class="flex gap-2">
+                                <input type="text" value="{{ $selectedProyekName ?? '' }}" readonly
+                                    class="w-full input input-bordered @error('state.proyek_id') input-error @enderror bg-base-200"
+                                    placeholder="Belum ada proyek dipilih..." aria-describedby="proyek_id-helper">
+                                <button type="button" class="btn btn-neutral shrink-0"
+                                    wire:click="openProyekPicker('form')">
+                                    <x-lucide-search class="size-4" />
+                                    Pilih
+                                </button>
+                                @if ($selectedProyekId)
+                                    <button type="button" class="btn btn-ghost btn-square shrink-0"
+                                        wire:click="clearProyekSelection" title="Hapus pilihan proyek">
+                                        <x-lucide-x class="size-4" />
+                                    </button>
+                                @endif
                             </div>
                         </div>
                         @error('state.proyek_id')
@@ -253,13 +251,22 @@
     <div class="w-full grid grid-cols-12 {{ $form ? 'hidden' : 'block' }}">
         <div class="relative w-full col-span-12 md:col-span-5 lg:col-span-3">
             <label class="sr-only" for="filter-proyek">Filter Proyek :</label>
-            <select wire:model.live="filterProyek" id="filter-proyek" name="filter-proyek"
-                class="w-full select select-sm" aria-describedby="filter-proyek-helper">
-                <option value="">Semua Proyek</option>
-                @foreach ($proyeks as $proyek)
-                    <option value="{{ $proyek->id }}">{{ $proyek->nama_proyek }}</option>
-                @endforeach
-            </select>
+            <input type="hidden" wire:model="filterProyekId" id="filter-proyek" name="filter-proyek">
+            <div class="flex gap-1">
+                <input type="text" value="{{ $filterProyekId ? $filterProyekName : '' }}" readonly
+                    class="py-2 px-3 block w-full border border-gray-300 text-sm rounded outline-none bg-base-200"
+                    placeholder="Semua Proyek" aria-describedby="filter-proyek-helper">
+                <button type="button" class="btn btn-neutral btn-sm shrink-0"
+                    wire:click="openProyekPicker('filter')">
+                    <x-lucide-search class="size-4" />
+                </button>
+                @if ($filterProyekId)
+                    <button type="button" class="btn btn-ghost btn-sm btn-square shrink-0"
+                        wire:click="clearProyekSelection" title="Hapus filter proyek">
+                        <x-lucide-x class="size-4" />
+                    </button>
+                @endif
+            </div>
         </div>
         <div class="relative w-full col-span-12 md:col-span-7 lg:col-span-4 md:col-start-7 lg:col-start-8">
             <label class="sr-only" for="filter-search-data-penggajian">Cari Data :</label>
@@ -358,4 +365,6 @@
     <div class="w-full {{ $form ? 'hidden' : 'block' }}">
         {{ $data->onEachSide(1)->links() }}
     </div>
+
+    <livewire:master-data.proyek.proyek-picker-modal />
 </div>

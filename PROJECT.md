@@ -30,7 +30,7 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 | Animasi | Motion (`resources/js/motion`) — engine `data-motion` |
 | Carousel | Swiper (`resources/js/components/swiper`) |
 | Dialog/alert | SweetAlert2 (`sweetalert2`) — `window.Swal` / `window.deleteSwal` / `window.Toast` |
-| Select | daisyUI `<select>` (kelas `select`) — tanpa plugin eksternal (Tom Select dicabut) |
+| Select | Native daisyUI `<select>` (kelas `select`) untuk opsi sedikit (status); **modal picker** (komponen Livewire) untuk pilih data referensi (mis. Proyek) — lihat §4.8 & §10.10 |
 | Icon | Lucide (`mallardduck/blade-lucide-icons` → `<x-lucide-*>`) |
 | Auth & otorisasi | Laravel built-in (`Auth::attempt`/`login`/`logout`) + spatie/laravel-permission v8 |
 | Database | MySQL (`proyek`, 127.0.0.1:3306, user `root`, tanpa password) |
@@ -71,13 +71,17 @@ app/
     Dashboard/MainIndex.php             # GET /dashboard    -> layouts.app
     MasterData/Pengguna/MainIndex.php   # GET /pengguna     -> layouts.app
     MasterData/Proyek/MainIndex.php     # GET /proyek      -> layouts.app
+    MasterData/Proyek/ProyekPickerModal.php # modal picker Proyek (child, bukan full-page)
     MasterData/ProyekPekerja/MainIndex.php # GET /proyek/{proyek}/pekerja -> layouts.app (main-detail + CRUD child)
+    MasterData/Penggajian/MainIndex.php     # GET /penggajian -> layouts.app (CRUD; pakai ProyekPickerModal)
   Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
   Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
-  Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes; pekerjas()
+  Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes; pekerjas()/penggajians()
   Models/ProyekPekerja.php              # #[Fillable]; casts decimal:2 + StatusPekerja (enum); HasFactory + SoftDeletes; proyek()
+  Models/ProyekPenggajian.php           # #[Fillable]; casts date + StatusPenggajian (enum); HasFactory + SoftDeletes; proyek()
   Enum/StatusProyek.php                 # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   Enum/StatusPekerja.php                # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
+  Enum/StatusPenggajian.php             # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   View/Components/                      # reusable Blade components (class-backed)
     Main/PageHeader.php                 # <x-main.page-header title="...">
     Table/Th.php                        # <x-table.th ...> (header tabel sortable)
@@ -94,7 +98,9 @@ config/
       dashboard/main-index.blade.php
       master-data/pengguna/main-index.blade.php
       master-data/proyek/main-index.blade.php
+      master-data/proyek/proyek-picker-modal.blade.php
       master-data/proyek-pekerja/main-index.blade.php
+      master-data/penggajian/main-index.blade.php
   components/                           # blade views untuk App\View\Components
     main/page-header.blade.php
     table/th.blade.php
@@ -121,6 +127,7 @@ use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
 use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
 use App\Livewire\MasterData\Proyek\MainIndex as ProyekMainIndex;
 use App\Livewire\MasterData\ProyekPekerja\MainIndex as ProyekPekerjaMainIndex;
+use App\Livewire\MasterData\Penggajian\MainIndex as PenggajianMainIndex;
 use App\Livewire\Pages\Main;
 use Illuminate\Support\Facades\Route;
 
@@ -139,6 +146,7 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
         Route::livewire('/proyek', ProyekMainIndex::class)->name('proyek.index');
         Route::livewire('/proyek/{proyek}/pekerja', ProyekPekerjaMainIndex::class)->name('proyek.pekerja.index');
+        Route::livewire('/penggajian', PenggajianMainIndex::class)->name('penggajian.index');
     });
 });
 ```
@@ -146,8 +154,8 @@ Route::middleware('auth')->group(function () {
 - Komponen Livewire berupa class di `App\Livewire` (view terpisah di `resources/views/livewire`).
   `Route::livewire()` menerima FQCN class, mis. `Login::class`.
 - Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
-  logout via route POST. `/dashboard`, `/pengguna`, `/proyek` & `/proyek/{proyek}/pekerja` wajib
-  login; `/login` hanya untuk guest.
+  logout via route POST. `/dashboard`, `/pengguna`, `/proyek`, `/proyek/{proyek}/pekerja` &
+  `/penggajian` wajib login; `/login` hanya untuk guest.
 - **Main‑detail:** list `Proyek` (`/proyek`) punya tombol **Detail Pekerja** di tiap baris
   (popover Aksi) yang navigasi ke `/proyek/{proyek}/pekerja` (`proyek.pekerja.index`) — halaman
   rincian Proyek + **CRUD child `ProyekPekerja`**. Route param `{proyek}` diteruskan ke `mount()`
@@ -230,6 +238,14 @@ dipanggil via tag `<x-...>` (bukan inline di view):
 Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class di
 `app/View/Components`, blade di `resources/views/components`).
 
+### 4.8 Modal Select Referensi (Proyek Picker)
+
+Pilih data referensi (mis. **Proyek**) di form/filter **harus** pakai modal picker Livewire,
+bukan `<select>` native besar. Referensi kanonik:
+`app/Livewire/MasterData/Proyek/ProyekPickerModal.php` +
+`resources/views/livewire/master-data/proyek/proyek-picker-modal.blade.php`,
+dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
+
 ---
 
 ## 5. Konvensi & Catatan Arsitektur
@@ -251,8 +267,13 @@ Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class d
 - **Model `ProyekPekerja`**: `#[Fillable]` (termasuk `proyek_id`); `tarif_harian`/`tarif_overtime`
   di-cast `decimal:2`, `status` di-cast enum `App\Enum\StatusPekerja`; `HasFactory` + `SoftDeletes`;
   relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint → `proyeks.id` (cascade).
+- **Model `ProyekPenggajian`**: `#[Fillable]` (termasuk `proyek_id`); `periode_mulai`/`periode_selesai`
+  di-cast `date`, `jam_kerja` `integer`, `status` di-cast enum `App\Enum\StatusPenggajian`;
+  `HasFactory` + `SoftDeletes`; relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint →
+  `proyeks.id` (cascade). Pilih Proyek di form/filter pakai `ProyekPickerModal` (lihat §4.8/§10.10).
 - **Enum `StatusProyek` & `StatusPekerja`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
   `label()` + `toSelectArray()`. Tambah status baru → extend enum, jangan simpan string.
+  (`StatusPenggajian` ikut pola sama.)
 - **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
 - **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
 - **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
@@ -277,6 +298,9 @@ Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class d
 - **Sudah ada:** main‑detail Proyek + CRUD child `ProyekPekerja` di `/proyek/{proyek}/pekerja`
   (route `proyek.pekerja.index`), enum `StatusPekerja`, model `ProyekPekerja` + FK
   `proyek_pekerjas.proyek_id`, factory & feature test terkait.
+- **Sudah ada:** CRUD `ProyekPenggajian` di `/penggajian` (route `penggajian.index`), enum
+  `StatusPenggajian`, model `ProyekPenggajian` + FK `proyek_penggajians.proyek_id`, serta
+  **modal picker Proyek** (`ProyekPickerModal`) untuk pilih Proyek di form & filter.
 
 ---
 
@@ -295,6 +319,8 @@ Bagian ini wajib dibaca agent di **setiap sesi** agar konsisten dengan pola proj
 7. **Ikons = `<x-lucide-*>`**, bukan emoji, untuk kesan tech/rapi.
 8. **Komponen berulang = `App\View\Components`** (lihat §4.7), dipakai via tag `<x-...>`,
    bukan di-copy-paste antar view.
+9. **Pilih data referensi = modal picker** (lihat §4.8 / §10.10), bukan `<select>` native besar
+   (kecuali opsi sedikit/fixed seperti enum status).
 
 ### 8.2 Adaptasi yang harus dilakukan model
 
@@ -360,6 +386,9 @@ di `doCreate` — tidak diinput user & tidak berubah saat edit.
 Contoh ketiga (**main‑detail + CRUD child** dengan route param & **input Rupiah
 terformat**): `app/Livewire/MasterData/ProyekPekerja/MainIndex.php` +
 `resources/views/livewire/master-data/proyek-pekerja/main-index.blade.php`.
+Contoh keempat (CRUD + **modal select referensi**): `MasterData/Penggajian/MainIndex.php` +
+`resources/views/livewire/master-data/penggajian/main-index.blade.php` (+ `ProyekPickerModal`).
+Pola modal referensi dijelaskan di §10.10.
 
 ### 10.1 Struktur class component
 
@@ -478,7 +507,8 @@ Field uang (`decimal`) **wajib** pakai pola input berformat ribuan Indonesia, bu
 
 - Feature test mengikuti `tests/Feature/UserCrudTest.php` (Pengguna),
   `tests/Feature/ProyekCrudTest.php` (Proyek) &
-  `tests/Feature/ProyekPekerjaCrudTest.php` (ProyekPekerja — child CRUD via route param):
+  `tests/Feature/ProyekPekerjaCrudTest.php` (ProyekPekerja — child CRUD via route param) &
+  `tests/Feature/PenggajianCrudTest.php` (Penggajian + listener picker):
   - `actingAs($admin)` + `Livewire::test(MainIndex::class)` (CRUD biasa) atau
     `Livewire::test(MainIndex::class, ['proyek' => $proyek->id])` untuk komponen yang
     menerima route param di `mount()` (child CRUD, mis. ProyekPekerja).
@@ -492,3 +522,83 @@ Field uang (`decimal`) **wajib** pakai pola input berformat ribuan Indonesia, bu
 
 > **Checklist CRUD baru:** class + view + route (`Route::livewire` FQCN) + JS delete
 > wiring (bila ada hapus) + feature test. Jalankan `vendor/bin/pint` & `php artisan test`.
+
+### 10.10 Pola Modal Select Referensi (wajib untuk pilih data FK/referensi)
+
+Saat form/filter perlu memilih data referensi (Proyek, User, dll) yang jumlahnya bisa banyak,
+**jangan pakai `<select>` native**. Buat **Livewire component modal picker** reusable.
+Referensi kanonik: `ProyekPickerModal` + `proyek-picker-modal.blade.php`, dipakai di
+`MasterData/Penggajian/MainIndex` + `main-index.blade.php`.
+
+**Komunikasi parent → modal (buka):**
+```php
+// Parent (MainIndex):
+public function openProyekPicker(string $context = 'form'): void
+{
+    $this->dispatch('openProyekPicker', context: $context); // context: 'form' | 'filter'
+}
+```
+```php
+// Child (ProyekPickerModal):
+#[On('openProyekPicker')]
+public function openModal(string $context = 'form'): void
+{
+    $this->context = $context;
+    $this->search = '';
+    $this->loadResults();
+    $this->open = true;
+}
+```
+
+**Komunikasi modal → parent (pilih):**
+```php
+// Child, saat user klik baris:
+public function selectProyek(int $id): void
+{
+    $proyek = Proyek::findOrFail($id);
+    $this->dispatch('proyekSelected',
+        id: $proyek->id, kode: $proyek->kode_proyek, nama: $proyek->nama_proyek,
+        context: $this->context);
+    $this->closeModal();
+}
+```
+```php
+// Parent:
+#[On('proyekSelected')]
+public function handleProyekSelected(int $id, string $nama, string $context = 'form'): void
+{
+    if ($context === 'filter') {
+        $this->filterProyekId = $id;
+        $this->filterProyekName = $nama;
+        return;
+    }
+    $this->state['proyek_id'] = $id;
+    $this->selectedProyekId = $id;
+    $this->selectedProyekName = $nama;
+}
+```
+
+**Aturan & konvensi:**
+- **Modal diedit via parent**: letakkan `<livewire:master-data.proyek.proyek-picker-modal />`
+  di akhir view parent (bukan route sendiri).
+- **View modal**: `<dialog class="modal modal-open">` (daisyUI), `wire:click.self="closeModal"`,
+  tombol tutup ×, input `<input wire:model.live.debounce.300ms="search">`, tabel hasil dengan
+  baris `wire:click="selectProyek($id)"`. Kolom modal tampilkan data yang membantu identifikasi
+  (mis. kode + nama + status).
+- **Filter pencarian**: `where('status', AKTIF)->whereNull('deleted_at')` + LIKE pada kolom
+  relevan (kode/nama/pemilik/lokasi). Debounce via `wire:model.live.debounce.300ms`.
+- **State parent**: pasangan `#[Locked] public ?int $selectedXId` + `#[Locked] public ?string $selectedXName`
+  untuk form; untuk filter tambah `#[Url(except: '')] public ?int $filterXId` (biar shareable URL)
+  + `#[Locked] public ?string $filterXName` (display). Name diisi server-side (jangan dari client).
+- **Field hidden** `<input type="hidden" wire:model="state.proyek_id">` tetap disimpan untuk
+  validasi; input display (`readonly`) hanya menampilkan `$selectedXName`.
+- **Validasi** tetap `required|exists:proyeks,id` di `state.proyek_id`.
+- **Clear**: method `clearProyekSelection()` reset `state.proyek_id` + `selectedXId/Name` +
+  `filterXId/Name` (atau terpisah per-konteks bila perlu).
+- **Saat edit** (`showForm(true, true)`): isi `state.proyek_id` dari `editData->proyek_id` dan
+  `selectedXName` dari `editData->proyek?->nama_proyek`.
+- **Gunakan hanya untuk data referensi yang banyak/variabel**. Status enum (2 nilai) tetap pakai
+  `<select>` native (lihat pola §10.6).
+- **Testing**: parent listener bisa diuji langsung, mis.
+  `->call('handleProyekSelected', id: $proyek->id, nama: $proyek->nama_proyek)`
+  lalu `->assertSet('state.proyek_id', $proyek->id)` (lihat `PenggajianCrudTest`).

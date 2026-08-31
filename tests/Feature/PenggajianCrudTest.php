@@ -97,6 +97,33 @@ test('administrator can edit a penggajian', function () {
     expect(ProyekPenggajian::find($target->id)->nama_periode)->toBe('Nama Baru');
 });
 
+test('proyek picker sets the selected proyek on the form', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('administrator');
+
+    $proyek = Proyek::factory()->create();
+
+    Livewire::actingAs($admin)
+        ->test(MainIndex::class)
+        ->call('handleProyekSelected', id: $proyek->id, nama: $proyek->nama_proyek)
+        ->assertSet('state.proyek_id', $proyek->id)
+        ->assertSet('selectedProyekId', $proyek->id)
+        ->assertSet('selectedProyekName', $proyek->nama_proyek);
+});
+
+test('proyek picker sets the filter proyek', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('administrator');
+
+    $proyek = Proyek::factory()->create();
+
+    Livewire::actingAs($admin)
+        ->test(MainIndex::class)
+        ->call('handleProyekSelected', id: $proyek->id, nama: $proyek->nama_proyek, context: 'filter')
+        ->assertSet('filterProyekId', $proyek->id)
+        ->assertSet('filterProyekName', $proyek->nama_proyek);
+});
+
 test('administrator can soft delete a penggajian', function () {
     $admin = User::factory()->create();
     $admin->assignRole('administrator');

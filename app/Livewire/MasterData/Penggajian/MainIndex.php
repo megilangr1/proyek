@@ -4,7 +4,6 @@ namespace App\Livewire\MasterData\Penggajian;
 
 use App\Enum\StatusPenggajian;
 use App\Helpers\MainHelper;
-use App\Models\Proyek;
 use App\Models\ProyekPenggajian;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -48,11 +47,20 @@ class MainIndex extends Component
     /** @var array<int, string> */
     public array $statusOptions = [];
 
+    #[Locked]
+    public ?int $selectedProyekId = null;
+
+    #[Locked]
+    public ?string $selectedProyekName = null;
+
     #[Url(except: '')]
     public ?string $search = '';
 
     #[Url(except: '')]
-    public ?int $filterProyek = null;
+    public ?int $filterProyekId = null;
+
+    #[Locked]
+    public ?string $filterProyekName = null;
 
     #[Url(except: '')]
     public string $order_by = 'created_at';
@@ -82,8 +90,8 @@ class MainIndex extends Component
 
         $penggajians = ProyekPenggajian::query();
 
-        if ($this->filterProyek !== null) {
-            $penggajians->where('proyek_id', '=', $this->filterProyek);
+        if ($this->filterProyekId !== null) {
+            $penggajians->where('proyek_id', '=', $this->filterProyekId);
         }
 
         if ($this->search !== '') {
@@ -97,7 +105,6 @@ class MainIndex extends Component
 
         return view('livewire.master-data.penggajian.main-index', [
             'data' => $data,
-            'proyeks' => Proyek::orderBy('nama_proyek')->get(),
         ]);
     }
 
@@ -116,8 +123,13 @@ class MainIndex extends Component
             $this->state['jam_kerja'] = $this->editData->jam_kerja;
             $this->state['keterangan'] = $this->editData->keterangan;
             $this->state['status'] = $this->editData->status->value;
+
+            $this->selectedProyekId = $this->editData->proyek_id;
+            $this->selectedProyekName = $this->editData->proyek?->nama_proyek;
         } else {
             $this->reset('editData');
+            $this->selectedProyekId = null;
+            $this->selectedProyekName = null;
         }
     }
 
@@ -243,5 +255,34 @@ class MainIndex extends Component
     public function updatedSearch($value): void
     {
         $this->resetPage();
+    }
+
+    public function openProyekPicker(string $context = 'form'): void
+    {
+        $this->dispatch('openProyekPicker', context: $context);
+    }
+
+    public function clearProyekSelection(): void
+    {
+        $this->state['proyek_id'] = null;
+        $this->selectedProyekId = null;
+        $this->selectedProyekName = null;
+        $this->filterProyekId = null;
+        $this->filterProyekName = null;
+    }
+
+    #[On('proyekSelected')]
+    public function handleProyekSelected(int $id, string $nama, string $context = 'form'): void
+    {
+        if ($context === 'filter') {
+            $this->filterProyekId = $id;
+            $this->filterProyekName = $nama;
+
+            return;
+        }
+
+        $this->state['proyek_id'] = $id;
+        $this->selectedProyekId = $id;
+        $this->selectedProyekName = $nama;
     }
 }
