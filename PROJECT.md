@@ -30,7 +30,7 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 | Animasi | Motion (`resources/js/motion`) — engine `data-motion` |
 | Carousel | Swiper (`resources/js/components/swiper`) |
 | Dialog/alert | SweetAlert2 (`sweetalert2`) — `window.Swal` / `window.deleteSwal` / `window.Toast` |
-| Select | Tom Select (`tom-select`) — init via `initTomSelect()` di `layouts/script.blade.php` |
+| Select | daisyUI `<select>` (kelas `select`) — tanpa plugin eksternal (Tom Select dicabut) |
 | Icon | Lucide (`mallardduck/blade-lucide-icons` → `<x-lucide-*>`) |
 | Auth & otorisasi | Laravel built-in (`Auth::attempt`/`login`/`logout`) + spatie/laravel-permission v8 |
 | Database | MySQL (`proyek`, 127.0.0.1:3306, user `root`, tanpa password) |
@@ -404,7 +404,7 @@ private function ensureCanManage(): void
 ### 10.4 Siklus aksi (tambah/ubah/hapus)
 
 - `showForm(bool $open, bool $edit = false)` — buka/tutup form, isi `state` dari `editData`
-  bila edit. Dispatch event `setTomSelect` bila pakai Tom Select.
+  bila edit.
 - `actionForm()` — router: jika `editData` ter-set → `doUpdate()`, else `doCreate()`.
 - `doCreate()` / `doUpdate()` — `validate()` pada `state.*`, lalu tulis DB di dalam
   `DB::transaction(fn () => ...)` (commit/rollback otomatis, hindari leak transaksi).

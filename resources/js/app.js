@@ -2,10 +2,7 @@ import Swal from "sweetalert2";
 import registerAlpineComponents from "./alpine";
 import { initSwiperSystem } from "./components/swiper";
 import { initMotionSystem } from "./motion";
-import TomSelect from "tom-select";
-
 window.Swal = Swal;
-window.TomSelect = TomSelect;
 
 window.Toast = Swal.mixin({
     toast: true,

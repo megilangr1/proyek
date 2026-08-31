@@ -46,9 +46,6 @@ class MainIndex extends Component
         'roles' => [],
     ];
 
-    #[Locked]
-    public array $tomSelectData = [];
-
     #[Url(except: '')]
     public ?string $search = '';
 
@@ -119,7 +116,6 @@ class MainIndex extends Component
             $this->reset('editData');
         }
 
-        $this->dispatch('setTomSelect', $this->tomSelectData);
     }
 
     public function actionForm(): void
