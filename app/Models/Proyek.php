@@ -32,4 +32,9 @@ class Proyek extends Model
     {
         return $this->hasMany(ProyekPekerja::class);
     }
+
+    public function penggajians(): HasMany
+    {
+        return $this->hasMany(ProyekPenggajian::class);
+    }
 }

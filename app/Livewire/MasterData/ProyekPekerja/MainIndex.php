@@ -92,9 +92,9 @@ class MainIndex extends Component
 
         if ($this->search !== '') {
             $pekerjas->where(function ($query) {
-                $query->where('nama_pekerja', 'LIKE', '%'.$this->search.'%')
-                    ->orWhere('nomor_hp', 'LIKE', '%'.$this->search.'%')
-                    ->orWhere('status_jabatan', 'LIKE', '%'.$this->search.'%');
+                $query->where('nama_pekerja', 'LIKE', '%' . $this->search . '%')
+                    ->orWhere('nomor_hp', 'LIKE', '%' . $this->search . '%')
+                    ->orWhere('status_jabatan', 'LIKE', '%' . $this->search . '%');
             });
         }
 

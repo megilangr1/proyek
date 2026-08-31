@@ -31,8 +31,8 @@
         </li>
 
         <li>
-            <details {{ request()->is('master-data/*') ? 'open' : '' }}>
-                <summary class="{{ request()->is('master-data/*') ? 'bg-neutral text-white' : '' }}">
+            <details {{ request()->is('master-data/*', 'penggajian*') ? 'open' : '' }}>
+                <summary class="{{ request()->is('master-data/*', 'penggajian*') ? 'bg-neutral text-white' : '' }}">
                     Master Data
                 </summary>
                 <ul class="mt-1">
@@ -44,6 +44,11 @@
                     <li>
                         <a href="{{ route('proyek.index') }}" wire:current="menu-active" wire:navigate>
                             Data Proyek
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('penggajian.index') }}" wire:current="menu-active" wire:navigate>
+                            Penggajian Proyek
                         </a>
                     </li>
                 </ul>
