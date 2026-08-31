@@ -288,6 +288,11 @@
                                 style="position-anchor:--anchor-proyek-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}">
                                 <h5 class="text-center">Aksi Data</h5>
                                 <hr class="border-t border-t-slate-300 my-1">
+                                <a href="{{ route('proyek.pekerja.index', $item->id) }}" wire:navigate
+                                    class="btn btn-xs btn-outline w-full font-normal tracking-wider"
+                                    popovertarget="popover-proyek-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}">
+                                    Detail Pekerja
+                                </a>
                                 <button type="button"
                                     class="btn btn-xs btn-outline w-full font-normal tracking-wider"
                                     popovertarget="popover-proyek-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"

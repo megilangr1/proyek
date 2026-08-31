@@ -6,6 +6,7 @@ use App\Enum\StatusProyek;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -26,4 +27,9 @@ class Proyek extends Model
         'tanggal_selesai' => 'date',
         'status' => StatusProyek::class,
     ];
+
+    public function pekerjas(): HasMany
+    {
+        return $this->hasMany(ProyekPekerja::class);
+    }
 }

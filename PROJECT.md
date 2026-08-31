@@ -71,25 +71,30 @@ app/
     Dashboard/MainIndex.php             # GET /dashboard    -> layouts.app
     MasterData/Pengguna/MainIndex.php   # GET /pengguna     -> layouts.app
     MasterData/Proyek/MainIndex.php     # GET /proyek      -> layouts.app
+    MasterData/ProyekPekerja/MainIndex.php # GET /proyek/{proyek}/pekerja -> layouts.app (main-detail + CRUD child)
   Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
   Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
-  Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes
+  Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes; pekerjas()
+  Models/ProyekPekerja.php              # #[Fillable]; casts decimal:2 + StatusPekerja (enum); HasFactory + SoftDeletes; proyek()
   Enum/StatusProyek.php                 # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
+  Enum/StatusPekerja.php                # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   View/Components/                      # reusable Blade components (class-backed)
     Main/PageHeader.php                 # <x-main.page-header title="...">
     Table/Th.php                        # <x-table.th ...> (header tabel sortable)
 config/
   livewire.php                          # make_command.type => 'class'; emoji => false; class_namespace App\Livewire
   main_config.php                       # branding (name, short_name, tagline, description)
-routes/web.php                          # Route::livewire(FQCN) + logout POST
-database/factories/ProyekFactory.php     # factory Proyek (tanggal terurut, kode PRJnnn)
-resources/views/
-  livewire/                             # blade views untuk class components
-    pages/main.blade.php
-    auth/login.blade.php
-    dashboard/main-index.blade.php
-    master-data/pengguna/main-index.blade.php
-    master-data/proyek/main-index.blade.php
+  routes/web.php                          # Route::livewire(FQCN) + logout POST
+  database/factories/ProyekFactory.php     # factory Proyek (tanggal terurut, kode PRJnnn)
+  database/factories/ProyekPekerjaFactory.php # factory ProyekPekerja (proyek_id => Proyek::factory())
+  resources/views/
+    livewire/                             # blade views untuk class components
+      pages/main.blade.php
+      auth/login.blade.php
+      dashboard/main-index.blade.php
+      master-data/pengguna/main-index.blade.php
+      master-data/proyek/main-index.blade.php
+      master-data/proyek-pekerja/main-index.blade.php
   components/                           # blade views untuk App\View\Components
     main/page-header.blade.php
     table/th.blade.php
@@ -115,6 +120,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
 use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
 use App\Livewire\MasterData\Proyek\MainIndex as ProyekMainIndex;
+use App\Livewire\MasterData\ProyekPekerja\MainIndex as ProyekPekerjaMainIndex;
 use App\Livewire\Pages\Main;
 use Illuminate\Support\Facades\Route;
 
@@ -132,6 +138,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('master-data')->group(function () {
         Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
         Route::livewire('/proyek', ProyekMainIndex::class)->name('proyek.index');
+        Route::livewire('/proyek/{proyek}/pekerja', ProyekPekerjaMainIndex::class)->name('proyek.pekerja.index');
     });
 });
 ```
@@ -139,7 +146,13 @@ Route::middleware('auth')->group(function () {
 - Komponen Livewire berupa class di `App\Livewire` (view terpisah di `resources/views/livewire`).
   `Route::livewire()` menerima FQCN class, mis. `Login::class`.
 - Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
-  logout via route POST. `/dashboard`, `/pengguna` & `/proyek` wajib login; `/login` hanya untuk guest.
+  logout via route POST. `/dashboard`, `/pengguna`, `/proyek` & `/proyek/{proyek}/pekerja` wajib
+  login; `/login` hanya untuk guest.
+- **Main‑detail:** list `Proyek` (`/proyek`) punya tombol **Detail Pekerja** di tiap baris
+  (popover Aksi) yang navigasi ke `/proyek/{proyek}/pekerja` (`proyek.pekerja.index`) — halaman
+  rincian Proyek + **CRUD child `ProyekPekerja`**. Route param `{proyek}` diteruskan ke `mount()`
+  dan di‑resolve jadi model (jangan namai properti public sama dengan nama route param, akan
+  bentrok saat Livewire assign id mentah ke properti bertipe Model).
 - Perlu rute/guard baru? Pakai middleware `auth`/`guest` dan `Route::livewire()`.
 
 ### 4.2 Branding (config-driven)
@@ -233,8 +246,13 @@ Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class d
   pakai PHP 8 attribute (bukan `$fillable`). Password auto-hashed via cast. Helper: `isAdmin()`
   (role `administrator`/`meggi`), `isOperator()` (role `operator`), `user_role` (akses role pertama).
 - **Model `Proyek`**: `#[Fillable]`, `status` di-cast ke enum `App\Enum\StatusProyek`
-  (`AKTIF`/`NONAKTIF`); `HasFactory` + `SoftDeletes`. `kode_proyek` dibuat otomatis
-  (`PRJ001`…`PRJ999`) di `doCreate`, bukan diinput user.
+  (`AKTIF`/`NONAKTIF`); `HasFactory` + `SoftDeletes`; relasi `pekerjas()` (hasMany). `kode_proyek`
+  dibuat otomatis (`PRJ001`…`PRJ999`) di `doCreate`, bukan diinput user.
+- **Model `ProyekPekerja`**: `#[Fillable]` (termasuk `proyek_id`); `tarif_harian`/`tarif_overtime`
+  di-cast `decimal:2`, `status` di-cast enum `App\Enum\StatusPekerja`; `HasFactory` + `SoftDeletes`;
+  relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint → `proyeks.id` (cascade).
+- **Enum `StatusProyek` & `StatusPekerja`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
+  `label()` + `toSelectArray()`. Tambah status baru → extend enum, jangan simpan string.
 - **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
 - **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
 - **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
@@ -256,6 +274,9 @@ Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class d
 - Dashboard (`dashboard`) masih kerangka; layout drawer+sidebar+navbar sudah ada.
 - `app/Http/Controllers/MainController.php` masih dipakai untuk route `logout` (POST `/logout`);
   bukan orphan. File `resources/views/main.blade.php` & `welcome.blade.php` sudah dihapus.
+- **Sudah ada:** main‑detail Proyek + CRUD child `ProyekPekerja` di `/proyek/{proyek}/pekerja`
+  (route `proyek.pekerja.index`), enum `StatusPekerja`, model `ProyekPekerja` + FK
+  `proyek_pekerjas.proyek_id`, factory & feature test terkait.
 
 ---
 
@@ -336,6 +357,9 @@ Contoh kedua (akses admin + operator, tanpa password/role):
 `resources/views/livewire/master-data/proyek/main-index.blade.php`.
 `kode_proyek` dibuat otomatis (`PRJ001`…`PRJ999`, increment) via `generateKodeProyek()`
 di `doCreate` — tidak diinput user & tidak berubah saat edit.
+Contoh ketiga (**main‑detail + CRUD child** dengan route param & **input Rupiah
+terformat**): `app/Livewire/MasterData/ProyekPekerja/MainIndex.php` +
+`resources/views/livewire/master-data/proyek-pekerja/main-index.blade.php`.
 
 ### 10.1 Struktur class component
 
@@ -425,11 +449,39 @@ Gunakan `#[Url(except: '')]` agar state bisa di-share via URL:
 - `data-target` = alias komponen penuh, mis. `master-data.pengguna.main-index`
   (bukan suffix) agar `dispatchTo` sampai ke komponen.
 
-### 10.8 Testing
+### 10.8 Pola Input Rupiah / Angka Berformat (wajib untuk field uang)
 
-- Feature test mengikuti `tests/Feature/UserCrudTest.php` (Pengguna) &
-  `tests/Feature/ProyekCrudTest.php` (Proyek):
-  - `actingAs($admin)` + `Livewire::test(MainIndex::class)`.
+Field uang (`decimal`) **wajib** pakai pola input berformat ribuan Indonesia, bukan
+`<input type="number">` polos. Referensi: `tarif_harian`/`tarif_overtime` di
+`master-data/proyek-pekerja/main-index.blade.php`.
+
+- `<input type="text">` (bukan `number`) dengan `wire:model="state.field_text"`.
+- `class` ditambah `ps-14 text-right` → ruang prefix `Rp.` di kiri & angka rata kanan.
+- Prefix `Rp.` di `<div class="absolute inset-y-0 inset-s-0 flex items-center pointer-events-none z-20 ps-4">`
+  (z-20 agar di atas input tanpa `z-index` konflik; lihat §4.6 untuk pola ikon kanan/error).
+- Format & simpan via **Alpine** pada input yang sama:
+  ```blade
+  x-data
+  x-on:input="const raw = $el.value.replace(/[^\d]/g, '');
+              $wire.set('state.field', raw);
+              $wire.set('state.field_text', new Intl.NumberFormat('id-ID').format(raw));"
+  ```
+- `state.field` menyimpan **raw digit** (string angka) → divalidasi `numeric`/`min:0`;
+  `state.field_text` hanya tampilan (jangan divalidasi/disable‑mass‑assign).
+- Di `params` sediakan `field_text => null` agar reset bersih; di `showForm()` saat edit,
+  isi `state.field_text` dengan `number_format($editData->field, 0, ',', '.')`
+  (null‑safe bila field nullable: `$item->field !== null ? number_format(...) : ''`).
+- Tabel menampilkan nilai dengan `Rp {{ number_format((float) $item->field, 0, ',', '.') }}`.
+- Field uang **nullable**: di view beri `required` hanya bila wajib; validasi `nullable|numeric`.
+
+### 10.9 Testing
+
+- Feature test mengikuti `tests/Feature/UserCrudTest.php` (Pengguna),
+  `tests/Feature/ProyekCrudTest.php` (Proyek) &
+  `tests/Feature/ProyekPekerjaCrudTest.php` (ProyekPekerja — child CRUD via route param):
+  - `actingAs($admin)` + `Livewire::test(MainIndex::class)` (CRUD biasa) atau
+    `Livewire::test(MainIndex::class, ['proyek' => $proyek->id])` untuk komponen yang
+    menerima route param di `mount()` (child CRUD, mis. ProyekPekerja).
   - Isi via `->set('state.nama_proyek', ...)` lalu `->call('actionForm')` / `->call('doEdit', $id)`
     / `->call('doDelete', $id)`.
   - Otorisasi: user tanpa role `->test(MainIndex::class)->assertForbidden()`. Untuk fitur
