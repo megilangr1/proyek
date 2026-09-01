@@ -2,7 +2,7 @@
 
 namespace App\Livewire\MasterData\Proyek;
 
-use App\Enum\StatusProyek;
+use App\Enums\StatusProyek;
 use App\Helpers\MainHelper;
 use App\Models\Proyek;
 use Illuminate\Validation\Rule;
@@ -20,7 +20,13 @@ class MainIndex extends Component
     use WithPagination;
 
     private const ALLOWED_SORT_COLUMNS = [
-        'kode_proyek', 'nama_proyek', 'pemilik', 'tanggal_mulai', 'tanggal_selesai', 'created_at', 'id',
+        'kode_proyek',
+        'nama_proyek',
+        'pemilik',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'created_at',
+        'id',
     ];
 
     #[Locked]
@@ -75,7 +81,7 @@ class MainIndex extends Component
         $max = Proyek::query()
             ->where('kode_proyek', 'LIKE', 'PRJ%')
             ->get()
-            ->map(fn (Proyek $proyek) => (int) substr((string) $proyek->kode_proyek, 3))
+            ->map(fn(Proyek $proyek) => (int) substr((string) $proyek->kode_proyek, 3))
             ->max();
 
         $next = ($max ?? 0) + 1;
@@ -84,7 +90,7 @@ class MainIndex extends Component
             throw new \RuntimeException('Kode proyek mencapai batas maksimum (PRJ999).');
         }
 
-        return 'PRJ'.str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        return 'PRJ' . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
     }
 
     public function render(): View
@@ -96,10 +102,10 @@ class MainIndex extends Component
 
         if ($this->search !== '') {
             $proyeks->where(function ($query) {
-                $query->where('kode_proyek', 'LIKE', '%'.$this->search.'%')
-                    ->orWhere('nama_proyek', 'LIKE', '%'.$this->search.'%')
-                    ->orWhere('pemilik', 'LIKE', '%'.$this->search.'%')
-                    ->orWhere('lokasi', 'LIKE', '%'.$this->search.'%');
+                $query->where('kode_proyek', 'LIKE', '%' . $this->search . '%')
+                    ->orWhere('nama_proyek', 'LIKE', '%' . $this->search . '%')
+                    ->orWhere('pemilik', 'LIKE', '%' . $this->search . '%')
+                    ->orWhere('lokasi', 'LIKE', '%' . $this->search . '%');
             });
         }
 

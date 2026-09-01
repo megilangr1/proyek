@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Enum;
+namespace App\Enums;
 
-enum StatusPekerja: int
+enum StatusProyek: int
 {
     case AKTIF = 1;
     case NONAKTIF = 2;
@@ -17,7 +17,7 @@ enum StatusPekerja: int
 
     public static function toSelectArray(): array
     {
-        return array_column(array_map(fn ($item) => [
+        return array_column(array_map(fn($item) => [
             'value' => $item->value,
             'label' => $item->label(),
         ], self::cases()), 'label', 'value');

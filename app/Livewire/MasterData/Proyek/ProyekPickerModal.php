@@ -2,7 +2,7 @@
 
 namespace App\Livewire\MasterData\Proyek;
 
-use App\Enum\StatusProyek;
+use App\Enums\StatusProyek;
 use App\Models\Proyek;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -47,7 +47,7 @@ class ProyekPickerModal extends Component
             ->whereNull('deleted_at');
 
         if ($this->search !== '') {
-            $term = '%'.$this->search.'%';
+            $term = '%' . $this->search . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('kode_proyek', 'LIKE', $term)
                     ->orWhere('nama_proyek', 'LIKE', $term)

@@ -9,13 +9,15 @@ use Illuminate\View\Component;
 class PageHeader extends Component
 {
     public string $title;
+    public string $subtitle;
 
     /**
      * Create a new component instance.
      */
-    public function __construct(string $title = '')
+    public function __construct(string $title = '', string $subtitle = '')
     {
         $this->title = $title;
+        $this->subtitle = $subtitle;
     }
 
     /**

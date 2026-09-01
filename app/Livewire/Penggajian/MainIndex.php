@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Penggajian;
 
-use App\Enum\StatusPenggajian;
+use App\Enums\StatusPenggajian;
 use App\Helpers\MainHelper;
 use App\Models\ProyekPenggajian;
 use Illuminate\Validation\Rule;

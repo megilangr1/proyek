@@ -19,7 +19,7 @@
                 <div class="w-full grid grid-cols-6 px-6 pb-2 gap-3">
 
                     <div class="col-span-6 md:col-span-6 lg:col-span-3">
-                        <label for="proyek_id"
+                        <label for="pilih-proyek"
                             class="block text-sm font-medium mb-2 {{ $errors->has('state.proyek_id') ? 'text-red-500' : '' }}">
                             Proyek :
                             <span class="text-red-500 text-xs">*</span>
@@ -31,7 +31,7 @@
                                     class="w-full input input-bordered @error('state.proyek_id') input-error @enderror bg-base-200"
                                     placeholder="Belum ada proyek dipilih..." aria-describedby="proyek_id-helper">
                                 <button type="button" class="btn btn-neutral shrink-0"
-                                    wire:click="openProyekPicker('form')">
+                                    wire:click="openProyekPicker('form')" id=pilih-proyek>
                                     <x-lucide-search class="size-4" />
                                     Pilih
                                 </button>
@@ -248,26 +248,7 @@
     </div>
 
     <div class="w-full grid grid-cols-12 {{ $form ? 'hidden' : 'block' }}">
-        <div class="relative w-full col-span-12 md:col-span-5 lg:col-span-3">
-            <label class="sr-only" for="filter-proyek">Filter Proyek :</label>
-            <input type="hidden" wire:model="filterProyekId" id="filter-proyek" name="filter-proyek">
-            <div class="flex gap-1">
-                <input type="text" value="{{ $filterProyekId ? $filterProyekName : '' }}" readonly
-                    class="py-2 px-3 block w-full border border-gray-300 text-sm rounded outline-none bg-base-200"
-                    placeholder="Semua Proyek" aria-describedby="filter-proyek-helper">
-                <button type="button" class="btn btn-neutral btn-sm shrink-0"
-                    wire:click="openProyekPicker('filter')">
-                    <x-lucide-search class="size-4" />
-                </button>
-                @if ($filterProyekId)
-                    <button type="button" class="btn btn-ghost btn-sm btn-square shrink-0"
-                        wire:click="clearProyekSelection" title="Hapus filter proyek">
-                        <x-lucide-x class="size-4" />
-                    </button>
-                @endif
-            </div>
-        </div>
-        <div class="relative w-full col-span-12 md:col-span-7 lg:col-span-4 md:col-start-7 lg:col-start-8">
+        <div class="relative w-full col-span-12 md:col-span-8 lg:col-span-4">
             <label class="sr-only" for="filter-search-data-penggajian">Cari Data :</label>
             <input type="text" name="filter-search-data-penggajian" id="filter-search-data-penggajian"
                 wire:model.live.debounce.500ms="search"
@@ -316,11 +297,11 @@
                         <td>{{ $item->nama_periode ?? '-' }}</td>
                         <td>{{ $item->periode_mulai?->format('d/m/Y') ?? '-' }}</td>
                         <td>{{ $item->periode_selesai?->format('d/m/Y') ?? '-' }}</td>
-                        <td class="text-right">{{ $item->jam_kerja ?? '-' }}</td>
+                        <td class="text-right">{{ $item->jam_kerja ?? '-' }} Jam</td>
                         <td class="max-w-xs truncate" title="{{ $item->keterangan }}">{{ $item->keterangan ?? '-' }}
                         </td>
                         <td>
-                            @if ($item->status === \App\Enum\StatusPenggajian::AKTIF)
+                            @if ($item->status === \App\Enums\StatusPenggajian::AKTIF)
                                 <span class="badge badge-success">{{ $item->status->label() }}</span>
                             @else
                                 <span class="badge badge-ghost">{{ $item->status->label() }}</span>
@@ -338,6 +319,12 @@
                                 style="position-anchor:--anchor-penggajian-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}">
                                 <h5 class="text-center">Aksi Data</h5>
                                 <hr class="border-t border-t-slate-300 my-1">
+                                <a href="{{ route('penggajian.detail', ['penggajian' => $item->id]) }}"
+                                    class="btn btn-xs btn-outline w-full font-normal tracking-wider"
+                                    popovertarget="popover-penggajian-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"
+                                    wire:navigate>
+                                    Detail Data
+                                </a>
                                 <button type="button"
                                     class="btn btn-xs btn-outline w-full font-normal tracking-wider"
                                     popovertarget="popover-penggajian-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"

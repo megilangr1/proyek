@@ -1,6 +1,6 @@
 <?php
 
-use App\Livewire\MasterData\Penggajian\MainIndex;
+use App\Livewire\Penggajian\MainIndex;
 use App\Models\Proyek;
 use App\Models\ProyekPenggajian;
 use App\Models\User;

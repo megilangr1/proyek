@@ -270,7 +270,7 @@
                         <td>{{ $item->tanggal_mulai?->format('d/m/Y') ?? '-' }}</td>
                         <td>{{ $item->tanggal_selesai?->format('d/m/Y') ?? '-' }}</td>
                         <td>
-                            @if ($item->status === \App\Enum\StatusProyek::AKTIF)
+                            @if ($item->status === \App\Enums\StatusProyek::AKTIF)
                                 <span class="badge badge-success">{{ $item->status->label() }}</span>
                             @else
                                 <span class="badge badge-ghost">{{ $item->status->label() }}</span>

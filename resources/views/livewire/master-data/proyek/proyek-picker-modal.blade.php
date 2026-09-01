@@ -41,15 +41,15 @@
                                     <td>{{ $item->pemilik }}</td>
                                     <td class="max-w-xs truncate" title="{{ $item->lokasi }}">{{ $item->lokasi }}</td>
                                     <td>
-                                        @if ($item->status === \App\Enum\StatusProyek::AKTIF)
-                                            <span class="badge badge-success badge-sm">{{ $item->status->label() }}</span>
+                                        @if ($item->status === \App\Enums\StatusProyek::AKTIF)
+                                            <span
+                                                class="badge badge-success badge-sm">{{ $item->status->label() }}</span>
                                         @else
                                             <span class="badge badge-ghost badge-sm">{{ $item->status->label() }}</span>
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        <button type="button"
-                                            class="btn btn-xs btn-primary btn-outline"
+                                        <button type="button" class="btn btn-xs btn-primary btn-outline"
                                             wire:click.stop="selectProyek({{ $item->id }})">
                                             Pilih
                                         </button>

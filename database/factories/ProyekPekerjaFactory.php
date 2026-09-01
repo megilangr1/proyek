@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enum\StatusPekerja;
+use App\Enums\StatusPekerja;
 use App\Models\Proyek;
 use App\Models\ProyekPekerja;
 use Illuminate\Database\Eloquent\Factories\Factory;

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enum\StatusPenggajian;
+use App\Enums\StatusPenggajian;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

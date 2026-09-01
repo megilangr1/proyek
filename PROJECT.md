@@ -73,15 +73,19 @@ app/
     MasterData/Proyek/MainIndex.php     # GET /proyek      -> layouts.app
     MasterData/Proyek/ProyekPickerModal.php # modal picker Proyek (child, bukan full-page)
     MasterData/ProyekPekerja/MainIndex.php # GET /proyek/{proyek}/pekerja -> layouts.app (main-detail + CRUD child)
-    MasterData/Penggajian/MainIndex.php     # GET /penggajian -> layouts.app (CRUD; pakai ProyekPickerModal)
+    Penggajian/MainIndex.php            # GET /penggajian -> layouts.app (CRUD; pakai ProyekPickerModal)
+    Penggajian/MainDetail.php           # GET /penggajian/{penggajian}/detail -> layouts.app (detail view)
   Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
   Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
   Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes; pekerjas()/penggajians()
   Models/ProyekPekerja.php              # #[Fillable]; casts decimal:2 + StatusPekerja (enum); HasFactory + SoftDeletes; proyek()
   Models/ProyekPenggajian.php           # #[Fillable]; casts date + StatusPenggajian (enum); HasFactory + SoftDeletes; proyek()
-  Enum/StatusProyek.php                 # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
-  Enum/StatusPekerja.php                # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
-  Enum/StatusPenggajian.php             # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
+  Models/ProyekPenggajianPekerja.php    # #[Fillable]; casts decimal:2 + StatusBayar (enum); HasFactory + SoftDeletes; proyekPenggajian()/proyekPekerja()
+  Models/ProyekPenggajianPekerjaHari.php # #[Fillable]; casts date + decimal:2; HasFactory + SoftDeletes; proyekPenggajianPekerja()
+  Enums/StatusProyek.php                # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
+  Enums/StatusPekerja.php               # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
+  Enums/StatusPenggajian.php            # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
+  Enums/StatusBayar.php                 # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   View/Components/                      # reusable Blade components (class-backed)
     Main/PageHeader.php                 # <x-main.page-header title="...">
     Table/Th.php                        # <x-table.th ...> (header tabel sortable)
@@ -100,7 +104,8 @@ config/
       master-data/proyek/main-index.blade.php
       master-data/proyek/proyek-picker-modal.blade.php
       master-data/proyek-pekerja/main-index.blade.php
-      master-data/penggajian/main-index.blade.php
+      penggajian/main-index.blade.php
+      penggajian/main-detail.blade.php
   components/                           # blade views untuk App\View\Components
     main/page-header.blade.php
     table/th.blade.php
@@ -127,7 +132,8 @@ use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
 use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
 use App\Livewire\MasterData\Proyek\MainIndex as ProyekMainIndex;
 use App\Livewire\MasterData\ProyekPekerja\MainIndex as ProyekPekerjaMainIndex;
-use App\Livewire\MasterData\Penggajian\MainIndex as PenggajianMainIndex;
+use App\Livewire\Penggajian\MainIndex as PenggajianMainIndex;
+use App\Livewire\Penggajian\MainDetail as PenggajianMainDetail;
 use App\Livewire\Pages\Main;
 use Illuminate\Support\Facades\Route;
 
@@ -146,7 +152,11 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
         Route::livewire('/proyek', ProyekMainIndex::class)->name('proyek.index');
         Route::livewire('/proyek/{proyek}/pekerja', ProyekPekerjaMainIndex::class)->name('proyek.pekerja.index');
-        Route::livewire('/penggajian', PenggajianMainIndex::class)->name('penggajian.index');
+    });
+
+    Route::prefix('penggajian')->name('penggajian.')->group(function () {
+        Route::livewire('/', PenggajianMainIndex::class)->name('index');
+        Route::livewire('/{penggajian}/detail', PenggajianMainDetail::class)->name('detail');
     });
 });
 ```
@@ -268,12 +278,19 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
   di-cast `decimal:2`, `status` di-cast enum `App\Enum\StatusPekerja`; `HasFactory` + `SoftDeletes`;
   relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint → `proyeks.id` (cascade).
 - **Model `ProyekPenggajian`**: `#[Fillable]` (termasuk `proyek_id`); `periode_mulai`/`periode_selesai`
-  di-cast `date`, `jam_kerja` `integer`, `status` di-cast enum `App\Enum\StatusPenggajian`;
+  di-cast `date`, `jam_kerja` `integer`, `status` di-cast enum `App\Enums\StatusPenggajian`;
   `HasFactory` + `SoftDeletes`; relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint →
   `proyeks.id` (cascade). Pilih Proyek di form/filter pakai `ProyekPickerModal` (lihat §4.8/§10.10).
-- **Enum `StatusProyek` & `StatusPekerja`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
-  `label()` + `toSelectArray()`. Tambah status baru → extend enum, jangan simpan string.
-  (`StatusPenggajian` ikut pola sama.)
+- **Model `ProyekPenggajianPekerja`**: `#[Fillable]` (termasuk `proyek_penggajian_id`, `proyek_pekerja_id`);
+  `tarif_harian`/`tarif_lembur`/`total_hari`/`total_overtime`/`gaji_normal`/`upah_overtime`/
+  `bonus`/`potongan`/`kasbon`/`total_bersih` di-cast `decimal:2`, `status_bayar` di-cast enum
+  `App\Enums\StatusBayar`, `tanggal_bayar` di-cast `date`; `HasFactory` + `SoftDeletes`; relasi
+  `proyekPenggajian()` + `proyekPekerja()` (belongsTo).
+- **Model `ProyekPenggajianPekerjaHari`**: `#[Fillable]` (termasuk `proyek_penggajian_pekerja_id`);
+  `tanggal` di-cast `date`, `hari_normal`/`jam_overtime` di-cast `decimal:2`; `HasFactory` + `SoftDeletes`;
+  relasi `proyekPenggajianPekerja()` (belongsTo).
+- **Enum `StatusProyek`, `StatusPekerja`, `StatusPenggajian`, `StatusBayar`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
+  `label()` + `toSelectArray()`. Lokasi: `App\Enums\`. Tambah status baru → extend enum, jangan simpan string.
 - **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
 - **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
 - **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
@@ -301,6 +318,10 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
 - **Sudah ada:** CRUD `ProyekPenggajian` di `/penggajian` (route `penggajian.index`), enum
   `StatusPenggajian`, model `ProyekPenggajian` + FK `proyek_penggajians.proyek_id`, serta
   **modal picker Proyek** (`ProyekPickerModal`) untuk pilih Proyek di form & filter.
+- **Sudah ada:** Halaman detail Penggajian di `/penggajian/{penggajian}/detail` (route `penggajian.detail`),
+  komponen `MainDetail` + view `main-detail.blade.php` (read-only detail view).
+- **Sudah ada:** Sub-modul penggajian per pekerja: `ProyekPenggajianPekerja` + `ProyekPenggajianPekerjaHari`,
+  tabel `proyek_penggajian_pekerjas` & `proyek_penggajian_pekerja_haris`, enum `StatusBayar`.
 
 ---
 
@@ -386,8 +407,8 @@ di `doCreate` — tidak diinput user & tidak berubah saat edit.
 Contoh ketiga (**main‑detail + CRUD child** dengan route param & **input Rupiah
 terformat**): `app/Livewire/MasterData/ProyekPekerja/MainIndex.php` +
 `resources/views/livewire/master-data/proyek-pekerja/main-index.blade.php`.
-Contoh keempat (CRUD + **modal select referensi**): `MasterData/Penggajian/MainIndex.php` +
-`resources/views/livewire/master-data/penggajian/main-index.blade.php` (+ `ProyekPickerModal`).
+Contoh keempat (CRUD + **modal select referensi**): `Penggajian/MainIndex.php` +
+`resources/views/livewire/penggajian/main-index.blade.php` (+ `ProyekPickerModal`).
 Pola modal referensi dijelaskan di §10.10.
 
 ### 10.1 Struktur class component
@@ -512,10 +533,10 @@ Field uang (`decimal`) **wajib** pakai pola input berformat ribuan Indonesia, bu
   - `actingAs($admin)` + `Livewire::test(MainIndex::class)` (CRUD biasa) atau
     `Livewire::test(MainIndex::class, ['proyek' => $proyek->id])` untuk komponen yang
     menerima route param di `mount()` (child CRUD, mis. ProyekPekerja).
-  - Isi via `->set('state.nama_proyek', ...)` lalu `->call('actionForm')` / `->call('doEdit', $id)`
+  - Isi via `->set('state.nama_periode', ...)` lalu `->call('actionForm')` / `->call('doEdit', $id)`
     / `->call('doDelete', $id)`.
   - Otorisasi: user tanpa role `->test(MainIndex::class)->assertForbidden()`. Untuk fitur
-    admin+operator (Proyek), `operator` justru `->assertOk()` dan boleh CRUD.
+    admin+operator (Proyek, Penggajian), `operator` justru `->assertOk()` dan boleh CRUD.
   - Self-delete hanya relevan untuk resource bertipe user (Pengguna): `->call('doDelete', $admin->id)`
     lalu assert masih ada. Proyek tidak punya self-delete guard.
 - `beforeEach` siapkan role spatie (`administrator`/`meggi`/`operator`).

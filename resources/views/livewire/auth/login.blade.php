@@ -12,8 +12,8 @@
             </div>
 
             <form wire:submit="login" class="flex flex-col gap-4">
-                <label class="form-control w-full">
-                    <span class="label-text mb-1">Email</span>
+                <label class="w-full flex flex-col gap-1">
+                    <span>Email</span>
                     <div class="relative">
                         <input type="email" wire:model="email" placeholder="you@example.com"
                             class="input input-bordered w-full pl-10 @error('email') input-error @enderror"
@@ -27,8 +27,8 @@
                     @enderror
                 </label>
 
-                <label class="form-control w-full">
-                    <span class="label-text mb-1">Password</span>
+                <label class="w-full flex flex-col gap-1">
+                    <span>Password</span>
                     <div class="relative">
                         <input type="password" wire:model="password" placeholder="••••••••"
                             class="input input-bordered relative z-0 w-full pl-10 @error('password') input-error @enderror"
@@ -45,7 +45,7 @@
 
                 <label class="label cursor-pointer justify-start gap-2">
                     <input type="checkbox" wire:model="remember" class="checkbox checkbox-sm checkbox-primary" />
-                    <span class="label-text">Ingat saya</span>
+                    <span>Ingat saya</span>
                 </label>
 
                 <button type="submit" class="btn btn-primary w-full" wire:loading.attr="disabled"

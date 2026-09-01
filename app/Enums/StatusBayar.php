@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Enum;
+namespace App\Enums;
 
-enum StatusPenggajian: int
+enum StatusBayar: int
 {
     case AKTIF = 1;
     case NONAKTIF = 2;
@@ -10,14 +10,14 @@ enum StatusPenggajian: int
     public function label(): string
     {
         return match ($this) {
-            self::AKTIF => 'Aktif',
-            self::NONAKTIF => 'Non-Aktif',
+            self::AKTIF => 'Belum di-Bayar',
+            self::NONAKTIF => 'Sudah di-Bayar',
         };
     }
 
     public static function toSelectArray(): array
     {
-        return array_column(array_map(fn ($item) => [
+        return array_column(array_map(fn($item) => [
             'value' => $item->value,
             'label' => $item->label(),
         ], self::cases()), 'label', 'value');

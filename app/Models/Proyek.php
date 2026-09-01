@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enum\StatusProyek;
+use App\Enums\StatusProyek;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,12 +28,12 @@ class Proyek extends Model
         'status' => StatusProyek::class,
     ];
 
-    public function pekerjas(): HasMany
+    public function proyekPekerja(): HasMany
     {
         return $this->hasMany(ProyekPekerja::class);
     }
 
-    public function penggajians(): HasMany
+    public function proyekPenggajian(): HasMany
     {
         return $this->hasMany(ProyekPenggajian::class);
     }

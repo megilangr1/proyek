@@ -2,7 +2,7 @@
 
 namespace App\Livewire\MasterData\ProyekPekerja;
 
-use App\Enum\StatusPekerja;
+use App\Enums\StatusPekerja;
 use App\Helpers\MainHelper;
 use App\Models\Proyek;
 use App\Models\ProyekPekerja;
@@ -88,13 +88,13 @@ class MainIndex extends Component
         $orderBy = in_array($this->order_by, self::ALLOWED_SORT_COLUMNS, true) ? $this->order_by : 'created_at';
         $orderType = strtoupper($this->order_type) === 'ASC' ? 'ASC' : 'DESC';
 
-        $pekerjas = $this->proyekData->pekerjas();
+        $pekerjas = $this->proyekData->proyekPekerja();
 
         if ($this->search !== '') {
             $pekerjas->where(function ($query) {
-                $query->where('nama_pekerja', 'LIKE', '%' . $this->search . '%')
-                    ->orWhere('nomor_hp', 'LIKE', '%' . $this->search . '%')
-                    ->orWhere('status_jabatan', 'LIKE', '%' . $this->search . '%');
+                $query->where('nama_pekerja', 'LIKE', '%'.$this->search.'%')
+                    ->orWhere('nomor_hp', 'LIKE', '%'.$this->search.'%')
+                    ->orWhere('status_jabatan', 'LIKE', '%'.$this->search.'%');
             });
         }
 
@@ -162,7 +162,7 @@ class MainIndex extends Component
         ]);
 
         try {
-            $this->proyekData->pekerjas()->create($this->pekerjaState);
+            $this->proyekData->proyekPekerja()->create($this->pekerjaState);
 
             (new MainHelper)->doAlert($this, 'success', 'Data Pekerja Berhasil di-Buat !');
             $this->showForm(false);
@@ -176,7 +176,7 @@ class MainIndex extends Component
         $this->ensureCanManage();
 
         try {
-            $this->editData = $this->proyekData->pekerjas()->where('id', '=', $id)->firstOrFail();
+            $this->editData = $this->proyekData->proyekPekerja()->where('id', '=', $id)->firstOrFail();
             $this->showForm(true, true);
         } catch (\Throwable $th) {
             (new MainHelper)->doAlert($this);
@@ -206,7 +206,7 @@ class MainIndex extends Component
         ]);
 
         try {
-            $pekerja = $this->proyekData->pekerjas()->where('id', '=', $this->editData->id)->firstOrFail();
+            $pekerja = $this->proyekData->proyekPekerja()->where('id', '=', $this->editData->id)->firstOrFail();
             $pekerja->update($this->pekerjaState);
 
             (new MainHelper)->doAlert($this, 'info', 'Perubahan Data Pekerja Berhasil di-Simpan !');
@@ -222,7 +222,7 @@ class MainIndex extends Component
         $this->ensureCanManage();
 
         try {
-            $this->proyekData->pekerjas()->where('id', '=', $id)->firstOrFail()->delete();
+            $this->proyekData->proyekPekerja()->where('id', '=', $id)->firstOrFail()->delete();
 
             (new MainHelper)->doAlert($this, 'warning', 'Data Pekerja Berhasil di-Hapus !');
 

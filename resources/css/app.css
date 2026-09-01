@@ -11,11 +11,45 @@
         luxury --dark;
 }
 
+@plugin "daisyui/theme" {
+    name: "corporate";
+    default: false;
+    prefersdark: false;
+    color-scheme: "light";
+    --color-base-100: oklch(100% 0 0);
+    --color-base-200: oklch(93% 0 0);
+    --color-base-300: oklch(86% 0 0);
+    --color-base-content: oklch(22.389% 0.031 278.072);
+    --color-primary: oklch(43% 0 0);
+    --color-primary-content: oklch(100% 0 0);
+    --color-secondary: oklch(55% 0.046 257.417);
+    --color-secondary-content: oklch(100% 0 0);
+    --color-accent: oklch(60% 0.118 184.704);
+    --color-accent-content: oklch(100% 0 0);
+    --color-neutral: oklch(0% 0 0);
+    --color-neutral-content: oklch(100% 0 0);
+    --color-info: oklch(60% 0.126 221.723);
+    --color-info-content: oklch(100% 0 0);
+    --color-success: oklch(62% 0.194 149.214);
+    --color-success-content: oklch(100% 0 0);
+    --color-warning: oklch(85% 0.199 91.936);
+    --color-warning-content: oklch(0% 0 0);
+    --color-error: oklch(70% 0.191 22.216);
+    --color-error-content: oklch(0% 0 0);
+    --radius-selector: 0.25rem;
+    --radius-field: 0.25rem;
+    --radius-box: 0.25rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
 @theme {
     --font-sans:
-        "Outfit", ui-sans-serif, system-ui, sans-serif,
-        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-        "Noto Color Emoji";
+        "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 @layer components {
@@ -28,25 +62,49 @@
     }
 
     .text-gradient {
-        @apply bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent;
+        @apply bg-linear-to-r from-primary via-secondary to-primary bg-clip-text text-transparent;
     }
 }
 
 /* Decorative grid overlay (theme-adaptive via base-content) */
 .bg-grid {
     background-image:
-        linear-gradient(to right, color-mix(in oklch, var(--color-base-content) 6%, transparent) 1px, transparent 1px),
-        linear-gradient(to bottom, color-mix(in oklch, var(--color-base-content) 6%, transparent) 1px, transparent 1px);
+        linear-gradient(
+            to right,
+            color-mix(in oklch, var(--color-base-content) 6%, transparent) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            to bottom,
+            color-mix(in oklch, var(--color-base-content) 6%, transparent) 1px,
+            transparent 1px
+        );
     background-size: 44px 44px;
-    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        #000 30%,
+        transparent 75%
+    );
+    mask-image: radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        #000 30%,
+        transparent 75%
+    );
 }
 
 /* Aurora blob — pan via Motion (data-motion="gradient-pan") */
 .bg-aurora {
     background-image:
-        radial-gradient(circle at 30% 30%, color-mix(in oklch, var(--color-primary) 45%, transparent), transparent 60%),
-        radial-gradient(circle at 70% 70%, color-mix(in oklch, var(--color-secondary) 45%, transparent), transparent 60%);
+        radial-gradient(
+            circle at 30% 30%,
+            color-mix(in oklch, var(--color-primary) 45%, transparent),
+            transparent 60%
+        ),
+        radial-gradient(
+            circle at 70% 70%,
+            color-mix(in oklch, var(--color-secondary) 45%, transparent),
+            transparent 60%
+        );
     background-size: 200% 200%;
     filter: blur(40px);
 }

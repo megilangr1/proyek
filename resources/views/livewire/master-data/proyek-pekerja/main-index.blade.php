@@ -11,7 +11,7 @@
                 <div class="flex-auto">
                     Rincian Proyek
                 </div>
-                <span class="badge @if ($proyek->status === \App\Enum\StatusProyek::AKTIF) badge-success @else badge-ghost @endif">
+                <span class="badge @if ($proyek->status === \App\Enums\StatusProyek::AKTIF) badge-success @else badge-ghost @endif">
                     {{ $proyek->status->label() }}
                 </span>
             </div>
@@ -365,12 +365,13 @@
                         <td>{{ $item->nama_pekerja ?? '-' }}</td>
                         <td>{{ $item->nomor_hp ?? '-' }}</td>
                         <td>{{ $item->status_jabatan ?? '-' }}</td>
-                        <td class="text-right">Rp {{ number_format((float) $item->tarif_harian, 0, ',', '.') }}</td>
-                        <td class="text-right">Rp
+                        <td class="text-right whitespace-nowrap">Rp
+                            {{ number_format((float) $item->tarif_harian, 0, ',', '.') }}</td>
+                        <td class="text-right whitespace-nowrap">Rp
                             {{ number_format((float) ($item->tarif_overtime ?? 0), 0, ',', '.') }}</td>
                         <td class="max-w-xs truncate" title="{{ $item->catatan }}">{{ $item->catatan ?? '-' }}</td>
                         <td>
-                            @if ($item->status === \App\Enum\StatusPekerja::AKTIF)
+                            @if ($item->status === \App\Enums\StatusPekerja::AKTIF)
                                 <span class="badge badge-success">{{ $item->status->label() }}</span>
                             @else
                                 <span class="badge badge-ghost">{{ $item->status->label() }}</span>

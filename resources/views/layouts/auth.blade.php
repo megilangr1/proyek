@@ -14,9 +14,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @livewireStyles
+    @yield('css')
+    @stack('css')
 </head>
 
-<body class="relative min-h-screen overflow-hidden bg-base-100 text-base-content antialiased grid place-items-center px-4">
+<body
+    class="relative min-h-screen overflow-hidden bg-base-100 text-base-content antialiased grid place-items-center px-4">
     <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div class="bg-grid absolute inset-0 opacity-60"></div>
         <div data-motion="gradient-pan" class="bg-aurora absolute -top-32 -left-24 h-80 w-80 opacity-50"></div>
@@ -29,6 +32,8 @@
     </main>
 
     @livewireScripts
+    @yield('script')
+    @stack('script')
 </body>
 
 </html>
