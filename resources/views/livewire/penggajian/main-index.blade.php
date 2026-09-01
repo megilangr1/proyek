@@ -57,8 +57,7 @@
                             <span class="text-red-500 text-xs">*</span>
                         </label>
                         <div class="relative">
-                            <input type="text" wire:model="state.nama_periode" id="nama_periode"
-                                name="nama_periode"
+                            <input type="text" wire:model="state.nama_periode" id="nama_periode" name="nama_periode"
                                 class="w-full input @error('state.nama_periode') input-error @enderror"
                                 aria-describedby="nama_periode-helper" placeholder="Masukan Nama Periode..."
                                 @if (!isset($editData)) required @endif autocomplete="false">
@@ -318,7 +317,8 @@
                         <td>{{ $item->periode_mulai?->format('d/m/Y') ?? '-' }}</td>
                         <td>{{ $item->periode_selesai?->format('d/m/Y') ?? '-' }}</td>
                         <td class="text-right">{{ $item->jam_kerja ?? '-' }}</td>
-                        <td class="max-w-xs truncate" title="{{ $item->keterangan }}">{{ $item->keterangan ?? '-' }}</td>
+                        <td class="max-w-xs truncate" title="{{ $item->keterangan }}">{{ $item->keterangan ?? '-' }}
+                        </td>
                         <td>
                             @if ($item->status === \App\Enum\StatusPenggajian::AKTIF)
                                 <span class="badge badge-success">{{ $item->status->label() }}</span>

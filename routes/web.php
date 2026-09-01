@@ -3,7 +3,7 @@
 use App\Http\Controllers\MainController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
-use App\Livewire\MasterData\Penggajian\MainIndex as PenggajianMainIndex;
+use App\Livewire\Penggajian\MainIndex as PenggajianMainIndex;
 use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
 use App\Livewire\MasterData\Proyek\MainIndex as ProyekMainIndex;
 use App\Livewire\MasterData\ProyekPekerja\MainIndex as ProyekPekerjaMainIndex;
@@ -21,11 +21,11 @@ Route::post('/logout', [MainController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     Route::livewire('/dashboard', DashboardMainIndex::class)->name('dashboard');
 
-    Route::livewire('/penggajian', PenggajianMainIndex::class)->name('penggajian.index');
-
     Route::prefix('master-data')->group(function () {
         Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
         Route::livewire('/proyek', ProyekMainIndex::class)->name('proyek.index');
         Route::livewire('/proyek/{proyek}/pekerja', ProyekPekerjaMainIndex::class)->name('proyek.pekerja.index');
     });
+
+    Route::livewire('/penggajian', PenggajianMainIndex::class)->name('penggajian.index');
 });
