@@ -5,54 +5,90 @@
             @if ($form) disabled @endif>Tambah Data</button>
     </x-main.page-header>
 
-    <div class="card border border-base-300 bg-base-100 w-full" data-motion="fade-up">
-        <div class="card-body p-0 gap-0">
-            <div class="card-title px-5 py-3 border-b border-b-slate-300 text-sm flex items-center justify-between">
-                <div class="flex-auto">
-                    Rincian Proyek
+    {{-- Compact Hero + Tabs — user-friendly, less scroll --}}
+    <div class="card border border-base-300 bg-base-100 overflow-hidden" data-motion="fade-up">
+        <div class="bg-gradient-to-r from-primary/10 via-base-100 to-secondary/10 px-5 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="size-9 rounded-xl bg-primary text-primary-content grid place-items-center shrink-0">
+                    <x-lucide-building-2 class="size-5" />
                 </div>
-                <span class="badge @if ($proyek->status === \App\Enums\StatusProyek::AKTIF) badge-success @else badge-ghost @endif">
-                    {{ $proyek->status->label() }}
-                </span>
+                <div class="min-w-0">
+                    <h3 class="font-bold leading-none truncate flex items-center gap-2">
+                        {{ $proyek->nama_proyek ?? '-' }}
+                        <span class="badge badge-sm font-mono badge-ghost">{{ $proyek->kode_proyek ?? '-' }}</span>
+                        <span
+                            class="badge badge-xs @if ($proyek->status === \App\Enums\StatusProyek::AKTIF) badge-success @else badge-ghost @endif">{{ $proyek->status->label() }}</span>
+                    </h3>
+                    <p class="text-xs text-base-content/60 truncate mt-1 flex items-center gap-1.5">
+                        <x-lucide-user class="size-3" /> {{ $proyek->pemilik ?? '-' }}
+                        <span class="opacity-30">•</span> <x-lucide-map-pin class="size-3" /> {{ $proyek->lokasi ?? '-' }}
+                        <span class="opacity-30 hidden sm:inline">•</span>
+                        <span class="hidden sm:inline-flex items-center gap-1"><x-lucide-calendar-range class="size-3" />
+                            {{ $proyek->tanggal_mulai?->format('d/m/Y') }}–{{ $proyek->tanggal_selesai?->format('d/m/Y') }}</span>
+                    </p>
+                </div>
             </div>
-            <div class="w-full grid grid-cols-6 px-6 py-4 gap-3 text-sm">
-                <div class="col-span-6 md:col-span-3">
-                    <span class="block text-xs text-base-content/60">Kode Proyek</span>
-                    <span class="font-semibold">{{ $proyek->kode_proyek ?? '-' }}</span>
+            <div class="flex items-center gap-2 shrink-0">
+                <div class="hidden sm:flex items-center gap-1 text-xs">
+                    <span class="badge badge-neutral badge-sm gap-1"><x-lucide-users class="size-3" /> {{ $stats['total'] ?? 0 }} pekerja</span>
+                    <span class="badge badge-ghost badge-sm">Rp {{ number_format($stats['sumHarian'] ?? 0, 0, ',', '.') }}/hr</span>
                 </div>
-                <div class="col-span-6 md:col-span-3">
-                    <span class="block text-xs text-base-content/60">Nama Proyek</span>
-                    <span class="font-semibold">{{ $proyek->nama_proyek ?? '-' }}</span>
-                </div>
-                <div class="col-span-6 md:col-span-3">
-                    <span class="block text-xs text-base-content/60">Pemilik</span>
-                    <span class="font-semibold">{{ $proyek->pemilik ?? '-' }}</span>
-                </div>
-                <div class="col-span-6 md:col-span-3">
-                    <span class="block text-xs text-base-content/60">Lokasi</span>
-                    <span class="font-semibold">{{ $proyek->lokasi ?? '-' }}</span>
-                </div>
-                <div class="col-span-6 md:col-span-3">
-                    <span class="block text-xs text-base-content/60">Tanggal Mulai</span>
-                    <span class="font-semibold">{{ $proyek->tanggal_mulai?->format('d/m/Y') ?? '-' }}</span>
-                </div>
-                <div class="col-span-6 md:col-span-3">
-                    <span class="block text-xs text-base-content/60">Tanggal Selesai</span>
-                    <span class="font-semibold">{{ $proyek->tanggal_selesai?->format('d/m/Y') ?? '-' }}</span>
-                </div>
+                <a href="{{ route('proyek.index') }}" wire:navigate class="btn btn-sm btn-ghost gap-1">
+                    <x-lucide-arrow-left class="size-4" /> Kembali
+                </a>
+                <button type="button" class="btn btn-sm btn-primary gap-1" wire:click="showForm(true)" @if ($form) disabled @endif>
+                    <x-lucide-user-plus class="size-4" /> Tambah
+                </button>
+            </div>
+        </div>
+        {{-- Inline compact meta --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 divide-x divide-base-300 border-t border-base-300 bg-base-200/30 text-xs">
+            <div class="px-4 py-2.5 flex items-center justify-between">
+                <span class="text-base-content/50 flex items-center gap-1"><x-lucide-users class="size-3" /> Pekerja</span>
+                <span class="font-semibold">{{ $stats['total'] ?? 0 }} <span class="text-base-content/50 font-normal">({{ $stats['aktif'] ?? 0 }} aktif)</span></span>
+            </div>
+            <div class="px-4 py-2.5 flex items-center justify-between">
+                <span class="text-base-content/50">Durasi</span>
+                <span class="font-semibold">{{ $stats['durasiHari'] ?? '-' }} hari</span>
+            </div>
+            <div class="px-4 py-2.5 flex items-center justify-between">
+                <span class="text-base-content/50">Avg Tarif</span>
+                <span class="font-mono font-semibold text-xs">Rp {{ number_format($stats['avgHarian'] ?? 0, 0, ',', '.') }}</span>
+            </div>
+            <div class="px-4 py-2.5 flex items-center justify-between">
+                <span class="text-base-content/50">Jabatan Top</span>
+                <span class="font-semibold truncate max-w-[10rem] text-xs">
+                    @if (($stats['jabatans'] ?? collect())->isNotEmpty())
+                        {{ $stats['jabatans']->keys()->first() }} ({{ $stats['jabatans']->first() }})
+                    @else
+                        -
+                    @endif
+                </span>
             </div>
         </div>
     </div>
 
-    <div class="card border border-base-300 bg-base-100 w-full {{ $form ? 'block' : 'hidden' }}">
+    {{-- Tabs antar modul — clear hierarchy --}}
+    <div role="tablist" class="tabs tabs-boxed bg-base-200 p-1 w-fit" data-motion="fade-up">
+        <a role="tab" class="tab tab-active gap-1"><x-lucide-users class="size-4" /> Pekerja</a>
+        <a href="{{ route('proyek.pengeluaran.index', $proyek->id) }}" wire:navigate role="tab" class="tab gap-1">
+            <x-lucide-receipt class="size-4" /> Pengeluaran
+        </a>
+        <a href="{{ route('penggajian.index', ['filterProyekId' => $proyek->id]) }}" wire:navigate role="tab" class="tab gap-1">
+            <x-lucide-wallet class="size-4" /> Penggajian
+        </a>
+    </div>
+
+    <div class="card border border-base-300 bg-base-100 w-full {{ $form ? 'block' : 'hidden' }}" data-motion="scale-in">
         <div class="card-body p-0">
-            <div class="card-title px-5 py-3 border-b border-b-slate-300 text-sm flex items-center justify-between">
-                <div class="flex-auto">
+            <div class="card-title px-5 py-3 border-b border-base-300 text-sm flex items-center justify-between">
+                <div class="flex-auto flex items-center gap-2">
+                    <x-lucide-file-pen-line class="size-4 text-primary" />
                     Formulir {{ $editData ? 'Ubah' : 'Tambah' }} Pekerja Proyek
                 </div>
 
-                <button type="button" class="btn bg-red-500 text-white btn-xs" wire:click="showForm(false)">
-                    Tutup Formulir
+                <button type="button" class="btn btn-ghost btn-xs gap-1" wire:click="showForm(false)">
+                    <x-lucide-x class="size-3" /> Tutup
                 </button>
             </div>
             <form wire:submit="actionForm">
@@ -296,85 +332,93 @@
                     </div>
 
                     <div class="col-span-6">
-                        <hr class="border-t border-t-slate-300">
+                        <hr class="border-t border-base-300">
                     </div>
 
                     <div class="col-span-6 md:col-span-2 xl:col-span-1">
-                        <button type="submit" class="btn btn-neutral w-full btn-sm">
-                            {{ isset($editData) ? 'Simpan Data' : 'Buat Data' }}
+                        <button type="submit" class="btn btn-primary w-full btn-sm gap-1">
+                            <x-lucide-save class="size-3" /> {{ isset($editData) ? 'Simpan Data' : 'Buat Data' }}
                         </button>
                     </div>
                     <div class="col-span-6 md:col-span-2 xl:col-span-1">
-                        <button type="{{ $editData ? 'button' : 'reset' }}" class="btn btn-error w-full btn-sm"
+                        <button type="{{ $editData ? 'button' : 'reset' }}" class="btn btn-ghost w-full btn-sm border border-base-300"
                             @isset($editData) wire:click="showForm(false)" @endisset>
                             {{ isset($editData) ? 'Batalkan' : 'Reset Input' }}
                         </button>
                     </div>
                 </div>
             </form>
-            <div class="card-actions text-xs font-semibold text-slate-600 bg-slate-200 rounded-b-lg px-5 py-2">
-                Formulir {{ $editData ? 'Ubah' : 'Tambah' }} Pekerja Proyek
+            <div class="card-actions text-xs font-semibold text-base-content/60 bg-base-200 rounded-b-lg px-5 py-2">
+                <x-lucide-info class="size-3" /> Formulir {{ $editData ? 'Ubah' : 'Tambah' }} Pekerja Proyek — tarif pakai format Rupiah Indonesia
             </div>
         </div>
     </div>
 
-    <div class="w-full grid grid-cols-12 {{ $form ? 'hidden' : 'block' }}">
+    <div class="w-full grid grid-cols-12 {{ $form ? 'hidden' : 'block' }}" data-motion="fade-up">
         <div class="relative w-full col-span-12 md:col-span-8 lg:col-span-4">
             <label class="sr-only" for="filter-search-data-pekerja">Cari Data :</label>
             <input type="text" name="filter-search-data-pekerja" id="filter-search-data-pekerja"
                 wire:model.live.debounce.500ms="search"
-                class="py-2 px-3 ps-9 block w-full border border-gray-300 text-sm rounded outline-none"
-                placeholder="Masukan Keyword Untuk Melakukan Pencarian...">
+                class="py-2.5 px-3 ps-9 block w-full border border-base-300 bg-base-100 text-sm rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="Cari pekerja, HP, jabatan...">
             <div class="absolute inset-y-0 inset-s-0 flex items-center pointer-events-none ps-3">
-                <svg class="size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.3-4.3"></path>
-                </svg>
+                <x-lucide-search class="size-4 text-base-content/40" />
             </div>
+        </div>
+        <div class="hidden lg:flex col-span-8 justify-end items-center gap-2 text-xs text-base-content/60">
+            <span class="badge badge-sm badge-ghost gap-1"><x-lucide-filter class="size-3" /> {{ $data->total() }} data</span>
+            <span class="hidden md:inline">• klik header untuk sort</span>
         </div>
     </div>
 
-    <div class="overflow-x-auto border rounded-lg border-base-300 {{ $form ? 'hidden' : 'block' }}">
+    <div class="overflow-x-auto border rounded-lg border-base-300 bg-base-100 shadow-sm {{ $form ? 'hidden' : 'block' }}">
         <table class="table table-sm table-pin-rows table-pin-cols">
             <thead>
-                <tr>
-                    <td class="text-center" width="6%">No.</td>
-                    <td>
+                <tr class="bg-base-200/50">
+                    <th class="text-center" width="6%">No.</th>
+                    <th>
                         <x-table.th label="Nama Pekerja" field="nama_pekerja" :orderBy="$order_by" :orderType="$order_type" />
-                    </td>
-                    <td>Nomor HP</td>
-                    <td>
+                    </th>
+                    <th>Nomor HP</th>
+                    <th>
                         <x-table.th label="Jabatan" field="status_jabatan" :orderBy="$order_by" :orderType="$order_type" />
-                    </td>
-                    <td>
+                    </th>
+                    <th>
                         <x-table.th label="Tarif Harian" field="tarif_harian" :orderBy="$order_by" :orderType="$order_type" />
-                    </td>
-                    <td>Tarif OT</td>
-                    <td>Catatan</td>
-                    <td>Status</td>
+                    </th>
+                    <th>Tarif OT</th>
+                    <th>Catatan</th>
+                    <th>Status</th>
                     <th class="text-center" width="10%">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($data as $item)
-                    <tr>
-                        <td class="text-center bg-slate-200">
+                    <tr class="hover:bg-base-200/50 transition-colors">
+                        <td class="text-center bg-base-200 font-mono text-xs">
                             {{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}.</td>
-                        <td>{{ $item->nama_pekerja ?? '-' }}</td>
-                        <td>{{ $item->nomor_hp ?? '-' }}</td>
-                        <td>{{ $item->status_jabatan ?? '-' }}</td>
-                        <td class="text-right whitespace-nowrap">Rp
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div class="avatar placeholder">
+                                    <div class="bg-neutral text-neutral-content rounded-full size-7 grid place-items-center text-[10px]">
+                                        {{ strtoupper(substr($item->nama_pekerja ?? '?', 0, 2)) }}
+                                    </div>
+                                </div>
+                                <span class="font-medium">{{ $item->nama_pekerja ?? '-' }}</span>
+                            </div>
+                        </td>
+                        <td><span class="font-mono text-xs">{{ $item->nomor_hp ?? '-' }}</span></td>
+                        <td><span class="badge badge-outline badge-sm gap-1"><x-lucide-briefcase class="size-3" />{{ $item->status_jabatan ?? '-' }}</span></td>
+                        <td class="text-right whitespace-nowrap font-mono text-xs">Rp
                             {{ number_format((float) $item->tarif_harian, 0, ',', '.') }}</td>
-                        <td class="text-right whitespace-nowrap">Rp
+                        <td class="text-right whitespace-nowrap font-mono text-xs">Rp
                             {{ number_format((float) ($item->tarif_overtime ?? 0), 0, ',', '.') }}</td>
-                        <td class="max-w-xs truncate" title="{{ $item->catatan }}">{{ $item->catatan ?? '-' }}</td>
+                        <td class="max-w-xs truncate text-xs" title="{{ $item->catatan }}">{{ $item->catatan ?? '-' }}</td>
                         <td>
                             @if ($item->status === \App\Enums\StatusPekerja::AKTIF)
-                                <span class="badge badge-success">{{ $item->status->label() }}</span>
+                                <span class="badge badge-success badge-sm gap-1"><span class="size-1.5 rounded-full bg-white"></span>{{ $item->status->label() }}</span>
                             @else
-                                <span class="badge badge-ghost">{{ $item->status->label() }}</span>
+                                <span class="badge badge-ghost badge-sm">{{ $item->status->label() }}</span>
                             @endif
                         </td>
                         <th class="text-center">
@@ -387,27 +431,32 @@
                                 popover
                                 id="popover-pekerja-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"
                                 style="position-anchor:--anchor-pekerja-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}">
-                                <h5 class="text-center">Aksi Data</h5>
-                                <hr class="border-t border-t-slate-300 my-1">
+                                <h5 class="text-center flex items-center justify-center gap-1"><x-lucide-settings-2 class="size-3" /> Aksi Data</h5>
+                                <hr class="border-t border-base-300 my-1">
                                 <button type="button"
-                                    class="btn btn-xs btn-outline w-full font-normal tracking-wider"
+                                    class="btn btn-xs btn-outline w-full font-normal tracking-wider gap-1"
                                     popovertarget="popover-pekerja-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"
                                     wire:click="doEdit('{{ $item->id }}')">
-                                    Edit Data
+                                    <x-lucide-pencil class="size-3" /> Edit Data
                                 </button>
                                 <button type="button"
                                     popovertarget="popover-pekerja-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"
-                                    class="btn btn-xs btn-outline w-full font-normal tracking-wider delete-btn"
+                                    class="btn btn-xs btn-outline w-full font-normal tracking-wider gap-1 delete-btn text-error"
                                     data-id="{{ $item->id }}"
                                     data-target="master-data.proyek-pekerja.main-index">
-                                    Hapus Data
+                                    <x-lucide-trash-2 class="size-3" /> Hapus Data
                                 </button>
                             </div>
                         </th>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center p-2">Belum Ada Data</td>
+                        <td colspan="9" class="text-center p-8">
+                            <div class="flex flex-col items-center gap-2 text-base-content/60">
+                                <x-lucide-inbox class="size-8" />
+                                <span class="text-sm">Belum ada pekerja — tambah data pertama!</span>
+                            </div>
+                        </td>
                     </tr>
                 @endforelse
             </tbody>

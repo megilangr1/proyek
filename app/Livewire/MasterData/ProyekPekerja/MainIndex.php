@@ -100,9 +100,37 @@ class MainIndex extends Component
 
         $data = $pekerjas->orderBy($orderBy, $orderType)->paginate(10);
 
+        // Rich stats untuk header kaya
+        $all = $this->proyekData->proyekPekerja()->get();
+        $total = $all->count();
+        $aktif = $all->where('status', StatusPekerja::AKTIF)->count();
+        $nonaktif = $total - $aktif;
+        $sumHarian = (float) $all->sum('tarif_harian');
+        $sumOvertime = (float) $all->sum(fn ($p): float => (float) ($p->tarif_overtime ?? 0));
+        $avgHarian = $total > 0 ? $sumHarian / $total : 0;
+        $jabatans = $all->groupBy('status_jabatan')->map->count()->sortDesc()->take(3);
+
+        // Durasi proyek (hari)
+        $durasiHari = null;
+        if ($this->proyekData->tanggal_mulai && $this->proyekData->tanggal_selesai) {
+            $durasiHari = $this->proyekData->tanggal_mulai->diffInDays($this->proyekData->tanggal_selesai) + 1;
+        }
+
+        $stats = [
+            'total' => $total,
+            'aktif' => $aktif,
+            'nonaktif' => $nonaktif,
+            'sumHarian' => $sumHarian,
+            'sumOvertime' => $sumOvertime,
+            'avgHarian' => $avgHarian,
+            'jabatans' => $jabatans,
+            'durasiHari' => $durasiHari,
+        ];
+
         return view('livewire.master-data.proyek-pekerja.main-index', [
             'data' => $data,
             'proyek' => $this->proyekData,
+            'stats' => $stats,
         ]);
     }
 

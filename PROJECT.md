@@ -74,13 +74,15 @@ app/
     MasterData/Pengguna/MainIndex.php   # GET /pengguna     -> layouts.app
     MasterData/Proyek/MainIndex.php     # GET /proyek      -> layouts.app
     MasterData/Proyek/ProyekPickerModal.php # modal picker Proyek (child, bukan full-page)
-    MasterData/ProyekPekerja/MainIndex.php # GET /proyek/{proyek}/pekerja -> layouts.app (main-detail + CRUD child)
-    Penggajian/MainIndex.php            # GET /penggajian -> layouts.app (CRUD; pakai ProyekPickerModal)
+    MasterData/ProyekPekerja/MainIndex.php # GET /proyek/{proyek}/pekerja -> layouts.app (compact hero + tabs + CRUD child, stats pekerja)
+    MasterData/ProyekPengeluaran/MainIndex.php # GET /proyek/{proyek}/pengeluaran -> layouts.app (child CRUD pengeluaran, Rupiah, glass+stats)
+    Penggajian/MainIndex.php            # GET /penggajian -> layouts.app (CRUD; pakai ProyekPickerModal; filterProyekId Url)
     Penggajian/MainDetail.php           # GET /penggajian/{penggajian}/detail -> layouts.app (detail + 3 modal: pencatatan + summary + bayar)
   Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
   Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
   Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes; pekerjas()/penggajians()
   Models/ProyekPekerja.php              # #[Fillable]; casts decimal:2 (DB decimal 15,2); StatusPekerja enum; HasFactory + SoftDeletes; proyek()
+  Models/ProyekPengeluaran.php          # #[Fillable]; casts date + KategoriPengeluaran + StatusPengeluaran + decimal:2 (15,2) nominal; HasFactory + SoftDeletes; proyek()
   Models/ProyekPenggajian.php           # #[Fillable]; casts date + StatusPenggajian (enum); HasFactory + SoftDeletes; proyek()/proyekPenggajianPekerja() HasMany
   Models/ProyekPenggajianPekerja.php    # #[Fillable]; casts decimal:2 (DB decimal 15,2); StatusBayar enum (BELUM/SUDAH) + tanggal_bayar date; SoftDeletes; proyekPenggajian()/proyekPekerja()/proyekPenggajianPekerjaHari() HasMany; tarif_overtime (rename 2026-09-02)
   Models/ProyekPenggajianPekerjaHari.php # #[Fillable]; casts date + decimal:2; HasFactory + SoftDeletes; proyekPenggajianPekerja()
@@ -88,6 +90,8 @@ app/
   Enums/StatusPekerja.php               # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   Enums/StatusPenggajian.php            # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   Enums/StatusBayar.php                 # int enum: BELUM=1, SUDAH=2 (label() + toSelectArray()) — rename dari AKTIF/NONAKTIF 2026-09-02
+  Enums/KategoriPengeluaran.php         # int enum: BAHAN_BAKU=1, SEMEN=2, PERALATAN=3, BAHAN_LAIN=4, UPAH=5, LAINNYA=6 (label() + toSelectArray())
+  Enums/StatusPengeluaran.php           # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   View/Components/                      # reusable Blade components (class-backed)
     Main/PageHeader.php                 # <x-main.page-header title="...">
     Table/Th.php                        # <x-table.th ...> (header tabel sortable)
@@ -105,9 +109,10 @@ config/
       master-data/pengguna/main-index.blade.php
       master-data/proyek/main-index.blade.php
       master-data/proyek/proyek-picker-modal.blade.php
-      master-data/proyek-pekerja/main-index.blade.php
+      master-data/proyek-pekerja/main-index.blade.php  # compact hero + tabs + stats (refactor 2026-09-02)
+      master-data/proyek-pengeluaran/main-index.blade.php # child CRUD pengeluaran (hero+stats+picker-less)
       penggajian/main-index.blade.php
-      penggajian/main-detail.blade.php
+      penggajian/main-detail.blade.php  # 3 modal (pencatatan/summary/bayar)
   components/                           # blade views untuk App\View\Components
     main/page-header.blade.php
     table/th.blade.php
@@ -135,6 +140,7 @@ use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
 use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
 use App\Livewire\MasterData\Proyek\MainIndex as ProyekMainIndex;
 use App\Livewire\MasterData\ProyekPekerja\MainIndex as ProyekPekerjaMainIndex;
+use App\Livewire\MasterData\ProyekPengeluaran\MainIndex as ProyekPengeluaranMainIndex;
 use App\Livewire\Penggajian\MainIndex as PenggajianMainIndex;
 use App\Livewire\Penggajian\MainDetail as PenggajianMainDetail;
 use App\Livewire\Pages\Main;
@@ -155,10 +161,11 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
         Route::livewire('/proyek', ProyekMainIndex::class)->name('proyek.index');
         Route::livewire('/proyek/{proyek}/pekerja', ProyekPekerjaMainIndex::class)->name('proyek.pekerja.index');
+        Route::livewire('/proyek/{proyek}/pengeluaran', ProyekPengeluaranMainIndex::class)->name('proyek.pengeluaran.index');
     });
 
     Route::prefix('penggajian')->name('penggajian.')->group(function () {
-        Route::livewire('/', PenggajianMainIndex::class)->name('index');
+        Route::livewire('/', PenggajianMainIndex::class)->name('index'); // filter ?filterProyekId=xx (#[Url])
         Route::livewire('/{penggajian}/detail', PenggajianMainDetail::class)->name('detail');
     });
 });
@@ -169,11 +176,7 @@ Route::middleware('auth')->group(function () {
 - Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
   logout via route POST. `/dashboard`, `/pengguna`, `/proyek`, `/proyek/{proyek}/pekerja` &
   `/penggajian` wajib login; `/login` hanya untuk guest.
-- **Main‑detail:** list `Proyek` (`/proyek`) punya tombol **Detail Pekerja** di tiap baris
-  (popover Aksi) yang navigasi ke `/proyek/{proyek}/pekerja` (`proyek.pekerja.index`) — halaman
-  rincian Proyek + **CRUD child `ProyekPekerja`**. Route param `{proyek}` diteruskan ke `mount()`
-  dan di‑resolve jadi model (jangan namai properti public sama dengan nama route param, akan
-  bentrok saat Livewire assign id mentah ke properti bertipe Model).
+- **Main‑detail:** list `Proyek` (`/proyek`) punya popover **Aksi** dengan 3 link `Detail Pekerja` (`proyek.pekerja.index`), `Detail Pengeluaran` (`proyek.pengeluaran.index`), `Penggajian` (`penggajian.index?filterProyekId=xx`) — halaman rincian Proyek + **CRUD child** (`ProyekPekerja` compact hero + tabs + stats; `ProyekPengeluaran` Rupiah + kategori). Route param `{proyek}` diteruskan ke `mount()` dan di‑resolve jadi model (jangan namai properti public sama dengan nama route param).
 - Perlu rute/guard baru? Pakai middleware `auth`/`guest` dan `Route::livewire()`.
 
 ### 4.2 Branding (config-driven)
@@ -280,11 +283,12 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
   dibuat otomatis (`PRJ001`…`PRJ999`) di `doCreate`, bukan diinput user.
 - **Model `ProyekPekerja`**: `#[Fillable]` (termasuk `proyek_id`); `tarif_harian`/`tarif_overtime`
   di-cast `decimal:2` (DB `decimal(15,2)` per 2026-09-02), `status` di-cast enum `App\Enum\StatusPekerja`; `HasFactory` + `SoftDeletes`;
-  relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint → `proyeks.id` (cascade).
+  relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint → `proyeks.id` (cascade). Detail page compact hero + tabs (Pekerja active) + inline stats.
+- **Model `ProyekPengeluaran`**: `#[Fillable]` (`proyek_id`, `tanggal`, `kategori`, `nama_item`, `nominal`, `keterangan`, `status`); `tanggal` `date`, `nominal` `decimal:2` (15,2), `kategori` `KategoriPengeluaran`, `status` `StatusPengeluaran`; `HasFactory` + `SoftDeletes`; `proyek()` `BelongsTo`; `proyek_id` FK cascade. Child CRUD `/proyek/{proyek}/pengeluaran` mirip `ProyekPekerja` (tabs + hero + stats sumNominal).
 - **Model `ProyekPenggajian`**: `#[Fillable]` (termasuk `proyek_id`); `periode_mulai`/`periode_selesai`
   di-cast `date`, `jam_kerja` `integer`, `status` di-cast enum `App\Enums\StatusPenggajian`;
   `HasFactory` + `SoftDeletes`; relasi `proyek()` (belongsTo) + `proyekPenggajianPekerja()` (HasMany, ditambah 2026-09-02). `proyek_id` punya FK constraint →
-  `proyeks.id` (cascade). Pilih Proyek di form/filter pakai `ProyekPickerModal` (lihat §4.8/§10.10).
+  `proyeks.id` (cascade). Pilih Proyek di form/filter pakai `ProyekPickerModal` (lihat §4.8/§10.10); `filterProyekId` `#[Url]` untuk link dari Proyek.
 - **Model `ProyekPenggajianPekerja`**: `#[Fillable]` (termasuk `proyek_penggajian_id`, `proyek_pekerja_id`);
   `tarif_harian`/`tarif_overtime` (`tarif_lembur` → `tarif_overtime` rename 2026-09-02)/`total_hari`/`total_overtime`/`gaji_normal`/`upah_overtime`/
   `bonus`/`potongan`/`kasbon`/`total_bersih` di-cast `decimal:2` (DB `decimal(15,2)` per 2026-09-02), `status_bayar` di-cast enum
@@ -293,8 +297,8 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
 - **Model `ProyekPenggajianPekerjaHari`**: `#[Fillable]` (termasuk `proyek_penggajian_pekerja_id`);
   `tanggal` di-cast `date`, `hari_normal`/`jam_overtime` di-cast `decimal:2`; `HasFactory` + `SoftDeletes`;
   relasi `proyekPenggajianPekerja()` (belongsTo).
-- **Enum `StatusProyek`, `StatusPekerja`, `StatusPenggajian`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
-  `label()` + `toSelectArray()`. **Enum `StatusBayar`**: `BELUM=1`, `SUDAH=2` (rename dari AKTIF/NONAKTIF 2026-09-02, label tetap "Belum di-Bayar"/"Sudah di-Bayar"). Lokasi: `App\Enums\`. Tambah status baru → extend enum, jangan simpan string.
+- **Enum `StatusProyek`, `StatusPekerja`, `StatusPenggajian`, `StatusPengeluaran`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
+  `label()` + `toSelectArray()`. **Enum `StatusBayar`**: `BELUM=1`, `SUDAH=2` (rename dari AKTIF/NONAKTIF 2026-09-02, label tetap "Belum di-Bayar"/"Sudah di-Bayar"). **Enum `KategoriPengeluaran`**: `BAHAN_BAKU=1`, `SEMEN=2`, `PERALATAN=3`, `BAHAN_LAIN=4`, `UPAH=5`, `LAINNYA=6`. Lokasi: `App\Enums\`. Tambah status baru → extend enum, jangan simpan string.
 - **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
 - **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
 - **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
@@ -317,15 +321,13 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
 - `app/Http/Controllers/MainController.php` masih dipakai untuk route `logout` (POST `/logout`);
   bukan orphan. File `resources/views/main.blade.php` & `welcome.blade.php` sudah dihapus.
 - **Sudah ada:** main‑detail Proyek + CRUD child `ProyekPekerja` di `/proyek/{proyek}/pekerja`
-  (route `proyek.pekerja.index`), enum `StatusPekerja`, model `ProyekPekerja` + FK
-  `proyek_pekerjas.proyek_id`, factory & feature test terkait.
-- **Sudah ada:** CRUD `ProyekPenggajian` di `/penggajian` (route `penggajian.index`), enum
-  `StatusPenggajian`, model `ProyekPenggajian` + FK `proyek_penggajians.proyek_id`, serta
-  **modal picker Proyek** (`ProyekPickerModal`) untuk pilih Proyek di form & filter.
+  (route `proyek.pekerja.index`, **compact hero + tabs Pekerja/Pengeluaran/Penggajian + inline stats**, refactor 2026-09-02), enum `StatusPekerja`, model `ProyekPekerja` + FK `proyek_pekerjas.proyek_id`, factory & feature test terkait.
+- **Sudah ada:** main‑detail Proyek + CRUD child `ProyekPengeluaran` di `/proyek/{proyek}/pengeluaran` (route `proyek.pengeluaran.index`), enum `KategoriPengeluaran` + `StatusPengeluaran`, model `ProyekPengeluaran` (tanggal, kategori, nama_item, nominal Rupiah `decimal(15,2)`, keterangan, status) + FK `proyek_pengeluarans.proyek_id`, factory & `ProyekPengeluaranCrudTest` (child param), hero+stats+tabs mirip Pekerja.
+- **Sudah ada:** CRUD `ProyekPenggajian` di `/penggajian` (route `penggajian.index` + `filterProyekId` `#[Url]` untuk link dari Proyek), enum `StatusPenggajian`, model `ProyekPenggajian` + FK `proyek_penggajians.proyek_id`, serta **modal picker Proyek** (`ProyekPickerModal`) untuk pilih Proyek di form & filter.
 - **Sudah ada:** Halaman detail Penggajian di `/penggajian/{penggajian}/detail` (route `penggajian.detail`),
   komponen `MainDetail` + view `main-detail.blade.php` — **update 2026-09-02**: bukan lagi read-only; ada 3 modal per pekerja — (1) pencatatan upah (`openModalPencatatan`, `saveData` validate `hari_normal in:0,0.5,1`, `jam_overtime 0..24`, `bonus/potongan/kasbon required|numeric`, `keterangan` textarea + prune hari di luar periode), (2) summary read-only (`openSummary`, tabel hari + totals `gaji_normal/upah_overtime/total_bersih`), (3) ubah status bayar (`openBayarModal`/`saveBayar` — `status_bayar` enum + `tanggal_bayar required_if SUDAH` + `keterangan` existing terisi). `prepareState()` `firstOrCreate` (preserve data) auto-sync pekerja dari `proyek.proyekPekerja`, `getTotalUpahProperty` pure, `border-base-300` konsisten, `type="number"` + lock pencatatan saat `SUDAH`.
 - **Sudah ada:** Sub-modul penggajian per pekerja: `ProyekPenggajianPekerja` (`tarif_overtime` rename + `decimal(15,2)` 2026-09-02) + `ProyekPenggajianPekerjaHari`,
-  tabel `proyek_penggajian_pekerjas` & `proyek_penggajian_pekerja_haris` (decimal 15,2), enum `StatusBayar` (`BELUM`/`SUDAH`, label "Belum/Sudah di-Bayar"). `ProyekPenggajian::proyekPenggajianPekerja()` HasMany ditambah 2026-09-02. Aksi tabel: `Lihat Summary` + `Pencatatan Upah` (disabled saat SUDAH) + `Ubah Status Bayar`.
+  tabel `proyek_penggajian_pekerjas` & `proyek_penggajian_pekerja_haris` (decimal 15,2), enum `StatusBayar` (`BELUM`/`SUDAH`, label "Belum/Sudah di-Bayar"). `ProyekPenggajian::proyekPenggajianPekerja()` HasMany ditambah 2026-09-02. Aksi tabel: `Lihat Summary` + `Pencatatan Upah` (disabled saat SUDAH) + `Ubah Status Bayar`. Popover Proyek now 3 link: Pekerja, Pengeluaran, Penggajian (filtered).
 
 ---
 

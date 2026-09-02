@@ -37,4 +37,9 @@ class Proyek extends Model
     {
         return $this->hasMany(ProyekPenggajian::class);
     }
+
+    public function proyekPengeluaran(): HasMany
+    {
+        return $this->hasMany(ProyekPengeluaran::class);
+    }
 }
