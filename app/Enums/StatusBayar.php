@@ -4,14 +4,14 @@ namespace App\Enums;
 
 enum StatusBayar: int
 {
-    case AKTIF = 1;
-    case NONAKTIF = 2;
+    case BELUM = 1;
+    case SUDAH = 2;
 
     public function label(): string
     {
         return match ($this) {
-            self::AKTIF => 'Belum di-Bayar',
-            self::NONAKTIF => 'Sudah di-Bayar',
+            self::BELUM => 'Belum di-Bayar',
+            self::SUDAH => 'Sudah di-Bayar',
         };
     }
 

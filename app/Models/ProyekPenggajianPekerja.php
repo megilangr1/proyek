@@ -6,6 +6,7 @@ use App\Enums\StatusBayar;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'proyek_pekerja_id',
     'jabatan',
     'tarif_harian',
-    'tarif_lembur',
+    'tarif_overtime',
     'total_hari',
     'total_overtime',
     'gaji_normal',
@@ -32,7 +33,7 @@ class ProyekPenggajianPekerja extends Model
 
     protected $casts = [
         'tarif_harian' => 'decimal:2',
-        'tarif_lembur' => 'decimal:2',
+        'tarif_overtime' => 'decimal:2',
         'total_hari' => 'decimal:2',
         'total_overtime' => 'decimal:2',
         'gaji_normal' => 'decimal:2',
@@ -54,5 +55,10 @@ class ProyekPenggajianPekerja extends Model
     public function proyekPekerja(): BelongsTo
     {
         return $this->belongsTo(ProyekPekerja::class);
+    }
+
+    public function proyekPenggajianPekerjaHari(): HasMany
+    {
+        return $this->hasMany(ProyekPenggajianPekerjaHari::class);
     }
 }

@@ -5,7 +5,7 @@
             @if ($form) disabled @endif>Tambah Data</button>
     </x-main.page-header>
 
-    <div class="card border border-slate-300 bg-base-100 w-full" data-motion="fade-up">
+    <div class="card border border-base-300 bg-base-100 w-full" data-motion="fade-up">
         <div class="card-body p-0 gap-0">
             <div class="card-title px-5 py-3 border-b border-b-slate-300 text-sm flex items-center justify-between">
                 <div class="flex-auto">
@@ -44,7 +44,7 @@
         </div>
     </div>
 
-    <div class="card border border-slate-300 bg-base-100 w-full {{ $form ? 'block' : 'hidden' }}">
+    <div class="card border border-base-300 bg-base-100 w-full {{ $form ? 'block' : 'hidden' }}">
         <div class="card-body p-0">
             <div class="card-title px-5 py-3 border-b border-b-slate-300 text-sm flex items-center justify-between">
                 <div class="flex-auto">
@@ -336,7 +336,7 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto border rounded-lg border-slate-300 {{ $form ? 'hidden' : 'block' }}">
+    <div class="overflow-x-auto border rounded-lg border-base-300 {{ $form ? 'hidden' : 'block' }}">
         <table class="table table-sm table-pin-rows table-pin-cols">
             <thead>
                 <tr>
@@ -383,7 +383,7 @@
                                 style="anchor-name:--anchor-pekerja-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}">
                                 Aksi
                             </button>
-                            <div class="dropdown dropdown-end menu w-auto rounded-box bg-base-100 border border-slate-300 shadow-lg text-xs flex flex-col gap-1 px-4"
+                            <div class="dropdown dropdown-end menu w-auto rounded-box bg-base-100 border border-base-300 shadow-lg text-xs flex flex-col gap-1 px-4"
                                 popover
                                 id="popover-pekerja-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}"
                                 style="position-anchor:--anchor-pekerja-{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}">

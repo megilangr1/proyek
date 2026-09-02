@@ -18,7 +18,7 @@ return new class extends Migration
 
             $table->string('jabatan');
             $table->decimal('tarif_harian');
-            $table->decimal('tarif_lembur');
+            $table->decimal('tarif_overtime');
 
             $table->decimal('total_hari');
             $table->decimal('total_overtime');
