@@ -17,20 +17,20 @@ return new class extends Migration
             $table->foreignId('proyek_pekerja_id');
 
             $table->string('jabatan');
-            $table->decimal('tarif_harian');
-            $table->decimal('tarif_overtime');
+            $table->decimal('tarif_harian', 15, 2);
+            $table->decimal('tarif_overtime', 15, 2);
 
-            $table->decimal('total_hari');
-            $table->decimal('total_overtime');
+            $table->decimal('total_hari', 15, 2);
+            $table->decimal('total_overtime', 15, 2);
 
-            $table->decimal('gaji_normal')->default(0);
-            $table->decimal('upah_overtime')->default(0);
+            $table->decimal('gaji_normal', 15, 2)->default(0);
+            $table->decimal('upah_overtime', 15, 2)->default(0);
 
-            $table->decimal('bonus')->default(0);
-            $table->decimal('potongan')->default(0);
-            $table->decimal('kasbon')->default(0);
+            $table->decimal('bonus', 15, 2)->default(0);
+            $table->decimal('potongan', 15, 2)->default(0);
+            $table->decimal('kasbon', 15, 2)->default(0);
 
-            $table->decimal('total_bersih');
+            $table->decimal('total_bersih', 15, 2);
 
             $table->tinyInteger('status_bayar')->default(1);
             $table->date('tanggal_bayar')->nullable();

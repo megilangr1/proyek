@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('nama_pekerja');
             $table->string('nomor_hp');
             $table->string('status_jabatan');
-            $table->decimal('tarif_harian');
-            $table->decimal('tarif_overtime');
+            $table->decimal('tarif_harian', 15, 2);
+            $table->decimal('tarif_overtime', 15, 2);
             $table->text('catatan')->nullable();
             $table->tinyInteger('status');
             $table->timestamps();

@@ -7,9 +7,8 @@
         </a>
     </x-main.page-header>
 
-    <div class="collapse bg-base-100 border">
+    <div class="collapse bg-base-100 border border-base-300">
         <input id="informasi-proyek" type="checkbox" />
-        <label for="informasi-proyek" class="fixed inset-0 hidden peer-checked:block"></label>
         <div class="collapse-title font-semibold p-0">
             <div class="w-full flex items-center justify-between px-3 py-2 gap-2">
                 <h6 class="flex-auto">Informasi Proyek</h6>
@@ -17,7 +16,7 @@
                 <span class="badge badge-xs badge-neutral h-auto text-[10px]">Buka</span>
             </div>
         </div>
-        <div class="collapse-content text-sm z-1 px-3">
+        <div class="collapse-content text-sm z-10 px-3">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>
                     <div class="text-xs font-semibold uppercase">Kode Proyek</div>
@@ -63,9 +62,8 @@
         </div>
     </div>
 
-    <div class="collapse bg-base-100 border">
+    <div class="collapse bg-base-100 border border-base-300">
         <input id="informasi-payroll" type="checkbox" />
-        <label for="informasi-payroll" class="fixed inset-0 hidden peer-checked:block"></label>
         <div class="collapse-title font-semibold p-0">
             <div class="w-full flex items-center justify-between px-3 py-2 gap-2">
                 <h6 class="flex-auto">Informasi Payroll / Penggajian</h6>
@@ -73,7 +71,7 @@
                 <span class="badge badge-xs badge-neutral h-auto text-[10px]">Buka</span>
             </div>
         </div>
-        <div class="collapse-content text-sm z-1 px-3 pb-0">
+        <div class="collapse-content text-sm z-10 px-3 pb-0">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div class="md:col-span-2">
                     <div class="text-xs font-semibold uppercase">Nama Periode</div>
@@ -128,20 +126,20 @@
         <table class="table table-sm table-pin-rows table-pin-cols">
             <thead>
                 <tr>
-                    <td class="text-center" width="6%">No.</td>
-                    <td>Nama Pekerja</td>
-                    <td>Jabatan</td>
-                    <td>Tarif Harian</td>
-                    <td>Tarif Overtime</td>
-                    <td>Total Hari</td>
-                    <td>Total Overtime</td>
-                    <td>Gaji Normal</td>
-                    <td>Upah Overtime</td>
-                    <td>Bonus</td>
-                    <td>Potongan</td>
-                    <td>Kasbon</td>
-                    <td>Total Bersih</td>
-                    <td>Status Bayar</td>
+                    <th class="text-center" width="6%">No.</th>
+                    <th>Nama Pekerja</th>
+                    <th>Jabatan</th>
+                    <th>Tarif Harian</th>
+                    <th>Tarif Overtime</th>
+                    <th>Total Hari</th>
+                    <th>Total Overtime</th>
+                    <th>Gaji Normal</th>
+                    <th>Upah Overtime</th>
+                    <th>Bonus</th>
+                    <th>Potongan</th>
+                    <th>Kasbon</th>
+                    <th>Total Bersih</th>
+                    <th>Status Bayar</th>
                     <th class="text-center" width="10%">Aksi</th>
                 </tr>
             </thead>
@@ -151,7 +149,7 @@
                         <td class="text-center bg-slate-200">
                             {{ $loop->iteration }}.
                         </td>
-                        <td>{{ $item->proyekPekerja->nama_pekerja ?? '-' }}</td>
+                        <td>{{ $item->proyekPekerja?->nama_pekerja ?? '-' }}</td>
                         <td>{{ $item->jabatan ?? '-' }}</td>
                         <td>
                             <div class="w-full flex items-center justify-between">
@@ -227,18 +225,33 @@
                                 popover id="popover-penggajian-{{ $loop->iteration }}"
                                 style="position-anchor:--anchor-penggajian-{{ $loop->iteration }}">
                                 <h5 class="text-center">Aksi Data</h5>
-                                <hr class="border-t border-t-slate-300 my-1">
+                                <hr class="border-t border-base-300 my-1">
                                 <button type="button" class="btn btn-xs btn-outline w-full font-normal tracking-wider"
                                     popovertarget="popover-penggajian-{{ $loop->iteration }}"
-                                    wire:click="openModalPencatatan('{{ $item->id }}')">
+                                    wire:click="openSummary('{{ $item->id }}')">
+                                    <x-lucide-eye class="size-3 shrink-0" />
+                                    Lihat Summary
+                                </button>
+                                <button type="button"
+                                    class="btn btn-xs w-full font-normal tracking-wider {{ $item->status_bayar === \App\Enums\StatusBayar::SUDAH ? 'btn-disabled' : 'btn-outline' }}"
+                                    popovertarget="popover-penggajian-{{ $loop->iteration }}"
+                                    @if ($item->status_bayar !== \App\Enums\StatusBayar::SUDAH) wire:click="openModalPencatatan('{{ $item->id }}')" @endif
+                                    @if ($item->status_bayar === \App\Enums\StatusBayar::SUDAH) disabled title="Sudah dibayar — terkunci" @endif>
+                                    <x-lucide-pencil class="size-3 shrink-0" />
                                     Pencatatan Upah
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline w-full font-normal tracking-wider"
+                                    popovertarget="popover-penggajian-{{ $loop->iteration }}"
+                                    wire:click="openBayarModal('{{ $item->id }}')">
+                                    <x-lucide-credit-card class="size-3 shrink-0" />
+                                    Ubah Status Bayar
                                 </button>
                             </div>
                         </th>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center p-2">Belum Ada Data</td>
+                        <td colspan="15" class="text-center p-2">Belum Ada Data</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -247,11 +260,11 @@
 
     <input type="checkbox" id="modal_pencatatan_upah" class="modal-toggle" wire:model.live="modal" />
     <div class="modal modal-bottom sm:modal-middle" role="dialog">
-        <div class="modal-box flex flex-col p-0 sm:w-[70vw] sm:max-w-full">
+        <div class="modal-box flex flex-col p-0 sm:w-[70vw] sm:max-w-full max-h-[85vh] overflow-y-auto">
             <h3 class="text-lg font-bold px-4 py-3">Formulir Pencatatan Upah</h3>
-            <hr class="border-t border-t-slate-300">
+            <hr class="border-t border-base-300">
 
-            <div class="flex flex-col gap-2 overscroll-auto">
+            <div class="flex flex-col gap-2 overflow-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-2">
                     <div>
                         <div class="text-xs font-semibold uppercase">Nama Pekerja</div>
@@ -308,13 +321,13 @@
                                                 <x-lucide-minus class="size-3 shrink-0" />
                                             </button>
 
-                                            <input type="text" min="0" max="1" step="0.5"
-                                                x-model.number="hours"
+                                            <input type="number" min="0" max="1" step="0.5"
+                                                x-model.number="hours" inputmode="decimal"
                                                 class="input input-sm input-bordered w-12 md:w-16 lg:w-24 text-center px-3" />
 
                                             <button type="button" class="btn btn-sm btn-primary"
                                                 @click="hours = Math.min(1, Number(hours || 0) + 0.5)"
-                                                :disabled="Number(hours || 0) >= 1" type="button">
+                                                :disabled="Number(hours || 0) >= 1">
                                                 <x-lucide-plus class="size-3 shrink-0" />
                                             </button>
                                         </div>
@@ -328,11 +341,11 @@
                                                 <x-lucide-minus class="size-3 shrink-0" />
                                             </button>
 
-                                            <input type="text" min="0" step="1"
-                                                x-model.number="hours"
+                                            <input type="number" min="0" step="1"
+                                                x-model.number="hours" inputmode="numeric"
                                                 class="input input-sm input-bordered w-12 md:w-16 lg:w-24 text-center px-3" />
 
-                                            <button type="button" class="btn  btn-sm btn-primary"
+                                            <button type="button" class="btn btn-sm btn-primary"
                                                 @click="hours = Number(hours || 0) + 1">
                                                 <x-lucide-plus class="size-3 shrink-0" />
                                             </button>
@@ -341,7 +354,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center p-2">Belum Ada Data</td>
+                                    <td colspan="3" class="text-center p-2">Belum Ada Data</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -359,7 +372,7 @@
                         <div class="relative">
                             <input type="text" wire:model="state.bonus_text" id="bonus" name="bonus"
                                 class="w-full ps-14 text-right input @error('state.bonus') input-error @enderror"
-                                aria-describedby="bonus-helper" placeholder="Contoh : 150.000" autocomplete="false"
+                                aria-describedby="bonus-helper" placeholder="Contoh : 150.000" autocomplete="off"
                                 x-data
                                 x-on:input="
                                     const raw = $el.value.replace(/[^\d]/g, '');
@@ -388,7 +401,7 @@
                                 </svg>
                             </div>
                         </div>
-                        @error('pekerjaState.bonus')
+                        @error('state.bonus')
                             <p class="text-xs text-red-600 mt-1" id="bonus-helper">
                                 {{ $message }}
                             </p>
@@ -406,7 +419,7 @@
                             <input type="text" wire:model="state.potongan_text" id="potongan" name="potongan"
                                 class="w-full ps-14 text-right input @error('state.potongan') input-error @enderror"
                                 aria-describedby="potongan-helper" placeholder="Contoh : 150.000"
-                                autocomplete="false" x-data
+                                autocomplete="off" x-data
                                 x-on:input="
                                     const raw = $el.value.replace(/[^\d]/g, '');
                                     $wire.set('state.potongan', raw);
@@ -434,7 +447,7 @@
                                 </svg>
                             </div>
                         </div>
-                        @error('pekerjaState.potongan')
+                        @error('state.potongan')
                             <p class="text-xs text-red-600 mt-1" id="potongan-helper">
                                 {{ $message }}
                             </p>
@@ -451,7 +464,7 @@
                         <div class="relative">
                             <input type="text" wire:model="state.kasbon_text" id="kasbon" name="kasbon"
                                 class="w-full ps-14 text-right input @error('state.kasbon') input-error @enderror"
-                                aria-describedby="kasbon-helper" placeholder="Contoh : 150.000" autocomplete="false"
+                                aria-describedby="kasbon-helper" placeholder="Contoh : 150.000" autocomplete="off"
                                 x-data
                                 x-on:input="
                                     const raw = $el.value.replace(/[^\d]/g, '');
@@ -480,8 +493,27 @@
                                 </svg>
                             </div>
                         </div>
-                        @error('pekerjaState.kasbon')
+                        @error('state.kasbon')
                             <p class="text-xs text-red-600 mt-1" id="kasbon-helper">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-6 gap-2 px-3 py-2">
+                    <div class="col-span-6">
+                        <label for="keterangan"
+                            class="block text-sm font-medium mb-2 {{ $errors->has('state.keterangan') ? 'text-red-500' : '' }}">
+                            Keterangan :
+                        </label>
+                        <div class="relative">
+                            <textarea wire:model="state.keterangan" id="keterangan" name="keterangan" rows="2"
+                                class="w-full textarea @error('state.keterangan') textarea-error @enderror"
+                                aria-describedby="keterangan-helper" placeholder="Catatan pencatatan (opsional)..."></textarea>
+                        </div>
+                        @error('state.keterangan')
+                            <p class="text-xs text-red-600 mt-1" id="keterangan-helper">
                                 {{ $message }}
                             </p>
                         @enderror
@@ -501,8 +533,8 @@
                 </div>
             </div>
             <div
-                class="px-4 py-2 border-t border-t-slate-300 flex flex-col lg:flex-row items-center lg:justify-end justify-center gap-2 text-xs font-semibold">
-                <button type="button" class="btn btn-neutral btn-sm w-full lg:w-auto" wire:click="saveData">
+                class="px-4 py-2 border-t border-base-300 flex flex-col lg:flex-row items-center lg:justify-end justify-center gap-2 text-xs font-semibold">
+                <button type="button" class="btn btn-neutral btn-sm w-full lg:w-auto" wire:click="saveData" wire:loading.attr="disabled">
                     <x-lucide-save class="shrink-0 size-4" />
 
                     Simpan Pencatatan Upah
@@ -510,5 +542,192 @@
             </div>
         </div>
         <label class="modal-backdrop" for="modal_pencatatan_upah">Close</label>
+    </div>
+
+    {{-- Summary Modal (read-only) --}}
+    <input type="checkbox" id="modal_summary" class="modal-toggle" wire:model.live="summaryModal" />
+    <div class="modal modal-bottom sm:modal-middle" role="dialog">
+        <div class="modal-box flex flex-col p-0 sm:w-[70vw] sm:max-w-full max-h-[85vh] overflow-y-auto">
+            <h3 class="text-lg font-bold px-4 py-3 flex items-center gap-2">
+                <x-lucide-eye class="size-5" />
+                Ringkasan Upah — {{ $selectedSummary?->proyekPekerja?->nama_pekerja ?? '-' }}
+            </h3>
+            <hr class="border-t border-base-300">
+
+            @if ($selectedSummary)
+                <div class="flex flex-col gap-3 px-4 py-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Nama Pekerja</div>
+                            <div class="text-sm mt-1">{{ $selectedSummary->proyekPekerja?->nama_pekerja ?? '-' }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Jabatan</div>
+                            <div class="text-sm mt-1">{{ $selectedSummary->jabatan ?? '-' }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Tarif Harian</div>
+                            <div class="text-sm mt-1">Rp {{ number_format((float) ($selectedSummary->proyekPekerja?->tarif_harian ?? $selectedSummary->tarif_harian ?? 0), 0, ',', '.') }} / Hari</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Tarif Overtime</div>
+                            <div class="text-sm mt-1">Rp {{ number_format((float) ($selectedSummary->proyekPekerja?->tarif_overtime ?? $selectedSummary->tarif_overtime ?? 0), 0, ',', '.') }} / Jam</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Status Bayar</div>
+                            <div class="text-sm mt-1">
+                                <span class="badge badge-xs h-auto text-[10px] {{ $selectedSummary->status_bayar === \App\Enums\StatusBayar::SUDAH ? 'badge-success' : 'badge-neutral' }}">{{ $selectedSummary->status_bayar->label() }}</span>
+                                @if ($selectedSummary->tanggal_bayar)
+                                    <span class="text-xs ms-1">{{ $selectedSummary->tanggal_bayar->format('d/m/Y') }}</span>
+                                @endif
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Periode</div>
+                            <div class="text-sm mt-1">{{ $proyekPenggajian->periode_mulai?->format('d/m/Y') }} — {{ $proyekPenggajian->periode_selesai?->format('d/m/Y') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto border border-base-300 rounded-lg">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th class="text-center">Hari</th>
+                                    <th class="text-center">Overtime (Jam)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($selectedSummary->proyekPenggajianPekerjaHari->sortBy('tanggal') as $hari)
+                                    <tr>
+                                        <td>
+                                            <div class="flex flex-col">
+                                                <span class="font-semibold text-xs">{{ $hari->tanggal->locale('id')->translatedFormat('l') }}</span>
+                                                <span class="text-xs">{{ $hari->tanggal->locale('id')->format('d M Y') }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">{{ rtrim(rtrim(number_format((float) $hari->hari_normal, 1, '.', ''), '0'), '.') ?: '0' }}</td>
+                                        <td class="text-center">{{ (int) $hari->jam_overtime }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center p-3 text-sm">Belum ada pencatatan harian.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="flex justify-between border-b py-1"><span>Total Hari</span><span class="font-semibold">{{ rtrim(rtrim(number_format((float) $selectedSummary->total_hari, 1, '.', ''), '0'), '.') ?: '0' }} Hari</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Total Overtime</span><span class="font-semibold">{{ number_format((float) $selectedSummary->total_overtime, 0, ',', '.') }} Jam</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Gaji Normal</span><span>Rp {{ number_format((float) $selectedSummary->gaji_normal, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Upah Overtime</span><span>Rp {{ number_format((float) $selectedSummary->upah_overtime, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Bonus</span><span>Rp {{ number_format((float) $selectedSummary->bonus, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Potongan</span><span>Rp {{ number_format((float) $selectedSummary->potongan, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Kasbon</span><span>Rp {{ number_format((float) $selectedSummary->kasbon, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-2 font-bold text-base"><span>Total Bersih</span><span>Rp {{ number_format((float) $selectedSummary->total_bersih, 0, ',', '.') }}</span></div>
+                    </div>
+
+                    @if ($selectedSummary->keterangan)
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Keterangan</div>
+                            <div class="text-sm mt-1 whitespace-pre-wrap border border-base-300 rounded p-2 bg-base-200">{{ $selectedSummary->keterangan }}</div>
+                        </div>
+                    @endif
+                </div>
+            @else
+                <div class="p-8 text-center text-sm">Memuat...</div>
+            @endif
+
+            <div class="px-4 py-3 border-t border-base-300 flex justify-end gap-2">
+                <label for="modal_summary" class="btn btn-neutral btn-sm">Tutup</label>
+                @if ($selectedSummary && $selectedSummary->status_bayar !== \App\Enums\StatusBayar::SUDAH)
+                    <button type="button" class="btn btn-primary btn-sm" wire:click="openModalPencatatan('{{ $selectedSummary->id }}')" wire:loading.attr="disabled">
+                        <x-lucide-pencil class="size-3" />
+                        Edit Pencatatan
+                    </button>
+                @endif
+            </div>
+        </div>
+        <label class="modal-backdrop" for="modal_summary">Close</label>
+    </div>
+
+    {{-- Bayar Modal (status + tanggal + catatan) --}}
+    <input type="checkbox" id="modal_bayar" class="modal-toggle" wire:model.live="bayarModal" />
+    <div class="modal modal-bottom sm:modal-middle" role="dialog">
+        <div class="modal-box flex flex-col p-0 sm:w-[50vw] sm:max-w-full">
+            <h3 class="text-lg font-bold px-4 py-3 flex items-center gap-2">
+                <x-lucide-credit-card class="size-5" />
+                Ubah Status Bayar — {{ $selectedBayar?->proyekPekerja?->nama_pekerja ?? '-' }}
+            </h3>
+            <hr class="border-t border-base-300">
+
+            <div class="flex flex-col gap-4 px-4 py-4">
+                <div>
+                    <label for="bayar_status"
+                        class="block text-sm font-medium mb-2 {{ $errors->has('bayarState.status_bayar') ? 'text-red-500' : '' }}">
+                        Status Bayar :
+                        <span class="text-red-500 text-xs">*</span>
+                    </label>
+                    <select wire:model.live="bayarState.status_bayar" id="bayar_status"
+                        class="w-full select @error('bayarState.status_bayar') select-error @enderror">
+                        <option value="">Pilih Status</option>
+                        @foreach (\App\Enums\StatusBayar::cases() as $case)
+                            <option value="{{ $case->value }}">{{ $case->label() }}</option>
+                        @endforeach
+                    </select>
+                    @error('bayarState.status_bayar')
+                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="bayar_tanggal"
+                        class="block text-sm font-medium mb-2 {{ $errors->has('bayarState.tanggal_bayar') ? 'text-red-500' : '' }}">
+                        Tanggal Bayar :
+                        @if (($bayarState['status_bayar'] ?? null) == \App\Enums\StatusBayar::SUDAH->value)
+                            <span class="text-red-500 text-xs">*</span>
+                        @endif
+                    </label>
+                    <input type="date" wire:model="bayarState.tanggal_bayar" id="bayar_tanggal"
+                        class="w-full input @error('bayarState.tanggal_bayar') input-error @enderror"
+                        @if (($bayarState['status_bayar'] ?? null) != \App\Enums\StatusBayar::SUDAH->value) disabled @endif>
+                    @error('bayarState.tanggal_bayar')
+                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-base-content/60 mt-1">Wajib jika status Sudah Dibayar, kosongkan jika Belum.</p>
+                </div>
+
+                <div>
+                    <label for="bayar_keterangan"
+                        class="block text-sm font-medium mb-2 {{ $errors->has('bayarState.keterangan') ? 'text-red-500' : '' }}">
+                        Catatan :
+                    </label>
+                    <textarea wire:model="bayarState.keterangan" id="bayar_keterangan" rows="2"
+                        class="w-full textarea @error('bayarState.keterangan') textarea-error @enderror"
+                        placeholder="Catatan pembayaran (opsional)..."></textarea>
+                    @error('bayarState.keterangan')
+                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                @if ($selectedBayar)
+                    <div class="bg-base-200 border border-base-300 rounded p-3 text-xs">
+                        <div class="flex justify-between"><span>Total Bersih</span><span class="font-semibold">Rp {{ number_format((float) $selectedBayar->total_bersih, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between mt-1"><span>Status saat ini</span><span class="badge badge-xs h-auto text-[10px] {{ $selectedBayar->status_bayar === \App\Enums\StatusBayar::SUDAH ? 'badge-success' : 'badge-neutral' }}">{{ $selectedBayar->status_bayar->label() }}</span></div>
+                    </div>
+                @endif
+            </div>
+
+            <div class="px-4 py-3 border-t border-base-300 flex justify-end gap-2">
+                <label for="modal_bayar" class="btn btn-ghost btn-sm">Batal</label>
+                <button type="button" class="btn btn-primary btn-sm" wire:click="saveBayar" wire:loading.attr="disabled">
+                    <x-lucide-save class="size-3" />
+                    Simpan Status
+                </button>
+            </div>
+        </div>
+        <label class="modal-backdrop" for="modal_bayar">Close</label>
     </div>
 </div>

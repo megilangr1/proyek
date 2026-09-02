@@ -14,6 +14,7 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 - **URL lokal:** http://proyek.test (di-serve Laravel Herd; lihat `AGENTS.md` → herd)
 - **Status:** Sudah migrasi, build, auth (login/logout) jalan, landing page sudah direfactor
   (glassmorphism + Motion + Lucide). Dashboard sudah ada (kerangka); area master-data mulai diisi.
+  Detail Penggajian (`/penggajian/{id}/detail`) sudah ada 3 modal: pencatatan upah + summary read-only + ubah status bayar (per 2026-09-02 — Q5), auto-sync pekerja + prune hari, hitung `total_bersih` server-side.
 
 ---
 
@@ -34,6 +35,7 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 | Icon | Lucide (`mallardduck/blade-lucide-icons` → `<x-lucide-*>`) |
 | Auth & otorisasi | Laravel built-in (`Auth::attempt`/`login`/`logout`) + spatie/laravel-permission v8 |
 | Database | MySQL (`proyek`, 127.0.0.1:3306, user `root`, tanpa password) |
+| Timezone | `Asia/Jakarta` (`config/app.php` `timezone`, diubah 2026-09-02 dari `UTC`) |
 | Build frontend | Vite 8 (`@tailwindcss/vite`, `laravel-vite-plugin`) |
 | Testing | Pest 5 |
 | Formatting | Laravel Pint |
@@ -74,18 +76,18 @@ app/
     MasterData/Proyek/ProyekPickerModal.php # modal picker Proyek (child, bukan full-page)
     MasterData/ProyekPekerja/MainIndex.php # GET /proyek/{proyek}/pekerja -> layouts.app (main-detail + CRUD child)
     Penggajian/MainIndex.php            # GET /penggajian -> layouts.app (CRUD; pakai ProyekPickerModal)
-    Penggajian/MainDetail.php           # GET /penggajian/{penggajian}/detail -> layouts.app (detail view)
+    Penggajian/MainDetail.php           # GET /penggajian/{penggajian}/detail -> layouts.app (detail + 3 modal: pencatatan + summary + bayar)
   Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
   Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
   Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes; pekerjas()/penggajians()
-  Models/ProyekPekerja.php              # #[Fillable]; casts decimal:2 + StatusPekerja (enum); HasFactory + SoftDeletes; proyek()
-  Models/ProyekPenggajian.php           # #[Fillable]; casts date + StatusPenggajian (enum); HasFactory + SoftDeletes; proyek()
-  Models/ProyekPenggajianPekerja.php    # #[Fillable]; casts decimal:2 + StatusBayar (enum); HasFactory + SoftDeletes; proyekPenggajian()/proyekPekerja()
+  Models/ProyekPekerja.php              # #[Fillable]; casts decimal:2 (DB decimal 15,2); StatusPekerja enum; HasFactory + SoftDeletes; proyek()
+  Models/ProyekPenggajian.php           # #[Fillable]; casts date + StatusPenggajian (enum); HasFactory + SoftDeletes; proyek()/proyekPenggajianPekerja() HasMany
+  Models/ProyekPenggajianPekerja.php    # #[Fillable]; casts decimal:2 (DB decimal 15,2); StatusBayar enum (BELUM/SUDAH) + tanggal_bayar date; SoftDeletes; proyekPenggajian()/proyekPekerja()/proyekPenggajianPekerjaHari() HasMany; tarif_overtime (rename 2026-09-02)
   Models/ProyekPenggajianPekerjaHari.php # #[Fillable]; casts date + decimal:2; HasFactory + SoftDeletes; proyekPenggajianPekerja()
   Enums/StatusProyek.php                # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   Enums/StatusPekerja.php               # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
   Enums/StatusPenggajian.php            # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
-  Enums/StatusBayar.php                 # int enum: AKTIF=1, NONAKTIF=2 (label() + toSelectArray())
+  Enums/StatusBayar.php                 # int enum: BELUM=1, SUDAH=2 (label() + toSelectArray()) — rename dari AKTIF/NONAKTIF 2026-09-02
   View/Components/                      # reusable Blade components (class-backed)
     Main/PageHeader.php                 # <x-main.page-header title="...">
     Table/Th.php                        # <x-table.th ...> (header tabel sortable)
@@ -119,8 +121,9 @@ config/
     alpine/themeSwitcher.js
     motion/index.js + animations.js     # engine + daftar animasi
     components/swiper.js
-  css/app.css                           # @import tailwindcss + @plugin daisyui + @theme + utilitas
-public/img/logo.png                    # logo brand
+  css/app.css                           # @import tailwindcss + @plugin daisyui + @theme + utilitas + number input centered + hide spin (2026-09-02)
+ public/img/logo.png                    # logo brand
+  config/app.php                        # timezone Asia/Jakarta
 ```
 
 ### 4.1 Routing (Livewire full-page)
@@ -211,6 +214,7 @@ guard + `inView()`/`animate()` dari `motion`), lalu daftarkan di `index.js` (imp
 `resources/css/app.css` mengekspor utilitas kustom (bukan CSS vanila di view):
 `.glass-card`, `.glass-card--primary`, `.text-gradient`, `.bg-grid`, `.bg-aurora`.
 Komponen UI wajib pakai **daisyUI 5** + Tailwind v4 — jangan tulis CSS vanila untuk komponen.
+Tambahan 2026-09-02: `input[type="number"]` di-center & spin arrow di-hide (webkit + Firefox) + border konsisten `border-base-300` (ganti `border-slate-300`) di card/tabel view pengguna/proyek/pekerja/penggajian.
 
 ### 4.5 Font (Outfit via Bunny Fonts CDN)
 
@@ -275,22 +279,22 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
   (`AKTIF`/`NONAKTIF`); `HasFactory` + `SoftDeletes`; relasi `pekerjas()` (hasMany). `kode_proyek`
   dibuat otomatis (`PRJ001`…`PRJ999`) di `doCreate`, bukan diinput user.
 - **Model `ProyekPekerja`**: `#[Fillable]` (termasuk `proyek_id`); `tarif_harian`/`tarif_overtime`
-  di-cast `decimal:2`, `status` di-cast enum `App\Enum\StatusPekerja`; `HasFactory` + `SoftDeletes`;
+  di-cast `decimal:2` (DB `decimal(15,2)` per 2026-09-02), `status` di-cast enum `App\Enum\StatusPekerja`; `HasFactory` + `SoftDeletes`;
   relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint → `proyeks.id` (cascade).
 - **Model `ProyekPenggajian`**: `#[Fillable]` (termasuk `proyek_id`); `periode_mulai`/`periode_selesai`
   di-cast `date`, `jam_kerja` `integer`, `status` di-cast enum `App\Enums\StatusPenggajian`;
-  `HasFactory` + `SoftDeletes`; relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint →
+  `HasFactory` + `SoftDeletes`; relasi `proyek()` (belongsTo) + `proyekPenggajianPekerja()` (HasMany, ditambah 2026-09-02). `proyek_id` punya FK constraint →
   `proyeks.id` (cascade). Pilih Proyek di form/filter pakai `ProyekPickerModal` (lihat §4.8/§10.10).
 - **Model `ProyekPenggajianPekerja`**: `#[Fillable]` (termasuk `proyek_penggajian_id`, `proyek_pekerja_id`);
-  `tarif_harian`/`tarif_lembur`/`total_hari`/`total_overtime`/`gaji_normal`/`upah_overtime`/
-  `bonus`/`potongan`/`kasbon`/`total_bersih` di-cast `decimal:2`, `status_bayar` di-cast enum
-  `App\Enums\StatusBayar`, `tanggal_bayar` di-cast `date`; `HasFactory` + `SoftDeletes`; relasi
-  `proyekPenggajian()` + `proyekPekerja()` (belongsTo).
+  `tarif_harian`/`tarif_overtime` (`tarif_lembur` → `tarif_overtime` rename 2026-09-02)/`total_hari`/`total_overtime`/`gaji_normal`/`upah_overtime`/
+  `bonus`/`potongan`/`kasbon`/`total_bersih` di-cast `decimal:2` (DB `decimal(15,2)` per 2026-09-02), `status_bayar` di-cast enum
+  `App\Enums\StatusBayar` (`BELUM`/`SUDAH`), `tanggal_bayar` di-cast `date`; `SoftDeletes` (tanpa HasFactory); relasi
+  `proyekPenggajian()` + `proyekPekerja()` (belongsTo) + `proyekPenggajianPekerjaHari()` (HasMany). Keterangan diisi existing saat buka modal bayar.
 - **Model `ProyekPenggajianPekerjaHari`**: `#[Fillable]` (termasuk `proyek_penggajian_pekerja_id`);
   `tanggal` di-cast `date`, `hari_normal`/`jam_overtime` di-cast `decimal:2`; `HasFactory` + `SoftDeletes`;
   relasi `proyekPenggajianPekerja()` (belongsTo).
-- **Enum `StatusProyek`, `StatusPekerja`, `StatusPenggajian`, `StatusBayar`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
-  `label()` + `toSelectArray()`. Lokasi: `App\Enums\`. Tambah status baru → extend enum, jangan simpan string.
+- **Enum `StatusProyek`, `StatusPekerja`, `StatusPenggajian`**: int enum (`AKTIF=1`, `NONAKTIF=2`) dengan
+  `label()` + `toSelectArray()`. **Enum `StatusBayar`**: `BELUM=1`, `SUDAH=2` (rename dari AKTIF/NONAKTIF 2026-09-02, label tetap "Belum di-Bayar"/"Sudah di-Bayar"). Lokasi: `App\Enums\`. Tambah status baru → extend enum, jangan simpan string.
 - **Penamaan**: TitleCase Enum key, descriptive method/variable, curly braces wajib.
 - **Testing**: Pest; utamakan feature test. `tests/Pest.php` aktifkan `RefreshDatabase`.
 - **Jangan ubah dependency** (`composer.json`/`package.json`) tanpa persetujuan.
@@ -319,9 +323,9 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
   `StatusPenggajian`, model `ProyekPenggajian` + FK `proyek_penggajians.proyek_id`, serta
   **modal picker Proyek** (`ProyekPickerModal`) untuk pilih Proyek di form & filter.
 - **Sudah ada:** Halaman detail Penggajian di `/penggajian/{penggajian}/detail` (route `penggajian.detail`),
-  komponen `MainDetail` + view `main-detail.blade.php` (read-only detail view).
-- **Sudah ada:** Sub-modul penggajian per pekerja: `ProyekPenggajianPekerja` + `ProyekPenggajianPekerjaHari`,
-  tabel `proyek_penggajian_pekerjas` & `proyek_penggajian_pekerja_haris`, enum `StatusBayar`.
+  komponen `MainDetail` + view `main-detail.blade.php` — **update 2026-09-02**: bukan lagi read-only; ada 3 modal per pekerja — (1) pencatatan upah (`openModalPencatatan`, `saveData` validate `hari_normal in:0,0.5,1`, `jam_overtime 0..24`, `bonus/potongan/kasbon required|numeric`, `keterangan` textarea + prune hari di luar periode), (2) summary read-only (`openSummary`, tabel hari + totals `gaji_normal/upah_overtime/total_bersih`), (3) ubah status bayar (`openBayarModal`/`saveBayar` — `status_bayar` enum + `tanggal_bayar required_if SUDAH` + `keterangan` existing terisi). `prepareState()` `firstOrCreate` (preserve data) auto-sync pekerja dari `proyek.proyekPekerja`, `getTotalUpahProperty` pure, `border-base-300` konsisten, `type="number"` + lock pencatatan saat `SUDAH`.
+- **Sudah ada:** Sub-modul penggajian per pekerja: `ProyekPenggajianPekerja` (`tarif_overtime` rename + `decimal(15,2)` 2026-09-02) + `ProyekPenggajianPekerjaHari`,
+  tabel `proyek_penggajian_pekerjas` & `proyek_penggajian_pekerja_haris` (decimal 15,2), enum `StatusBayar` (`BELUM`/`SUDAH`, label "Belum/Sudah di-Bayar"). `ProyekPenggajian::proyekPenggajianPekerja()` HasMany ditambah 2026-09-02. Aksi tabel: `Lihat Summary` + `Pencatatan Upah` (disabled saat SUDAH) + `Ubah Status Bayar`.
 
 ---
 
@@ -346,7 +350,7 @@ Bagian ini wajib dibaca agent di **setiap sesi** agar konsisten dengan pola proj
 ### 8.2 Adaptasi yang harus dilakukan model
 
 - Saat membuat komponen/UI baru: tiru struktur `app/Livewire/Pages/Main.php` + view
-  `resources/views/livewire/pages/main.blade.php` & `layouts/*` (class + `#[Layout]`, daisyUI, `data-motion`).
+  `resources/views/livewire/pages/main.blade.php` & `layouts/*` (class + `#[Layout]`, daisyUI `border-base-300`, `data-motion`).
 - Setelah ubah PHP: `vendor/bin/pint --format agent`.
 - Setelah ubah Blade/JS/CSS: `npm run build` (atau `npm run dev`) lalu cek visual.
 - Gunakan tools Boost bila relevan: `database-query`, `database-schema`, `search-docs`,
