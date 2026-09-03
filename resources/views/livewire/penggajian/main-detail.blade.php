@@ -285,8 +285,8 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto border-base-300">
-                    <table class="table table-sm table-pin-rows table-pin-cols">
+                <div class="overflow-x-auto border-base-300 min-h-96">
+                    <table class="table table-sm table-pin-rows table-pin-cols min-h-96">
                         <thead>
                             <tr>
                                 <th class="font-semibold uppercase" width="50%">
@@ -419,8 +419,8 @@
                         <div class="relative">
                             <input type="text" wire:model="state.potongan_text" id="potongan" name="potongan"
                                 class="w-full ps-14 text-right input @error('state.potongan') input-error @enderror"
-                                aria-describedby="potongan-helper" placeholder="Contoh : 150.000"
-                                autocomplete="off" x-data
+                                aria-describedby="potongan-helper" placeholder="Contoh : 150.000" autocomplete="off"
+                                x-data
                                 x-on:input="
                                     const raw = $el.value.replace(/[^\d]/g, '');
                                     $wire.set('state.potongan', raw);
@@ -510,8 +510,8 @@
                         </label>
                         <div class="relative">
                             <textarea wire:model="state.keterangan" id="keterangan" name="keterangan" rows="2"
-                                class="w-full textarea @error('state.keterangan') textarea-error @enderror"
-                                aria-describedby="keterangan-helper" placeholder="Catatan pencatatan (opsional)..."></textarea>
+                                class="w-full textarea @error('state.keterangan') textarea-error @enderror" aria-describedby="keterangan-helper"
+                                placeholder="Catatan pencatatan (opsional)..."></textarea>
                         </div>
                         @error('state.keterangan')
                             <p class="text-xs text-red-600 mt-1" id="keterangan-helper">
@@ -535,7 +535,8 @@
             </div>
             <div
                 class="px-4 py-2 border-t border-base-300 flex flex-col lg:flex-row items-center lg:justify-end justify-center gap-2 text-xs font-semibold">
-                <button type="button" class="btn btn-neutral btn-sm w-full lg:w-auto" wire:click="saveData" wire:loading.attr="disabled">
+                <button type="button" class="btn btn-neutral btn-sm w-full lg:w-auto" wire:click="saveData"
+                    wire:loading.attr="disabled">
                     <x-lucide-save class="shrink-0 size-4" />
 
                     Simpan Pencatatan Upah
@@ -560,7 +561,8 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <div class="text-xs font-semibold uppercase">Nama Pekerja</div>
-                            <div class="text-sm mt-1">{{ $selectedSummary->proyekPekerja?->nama_pekerja ?? '-' }}</div>
+                            <div class="text-sm mt-1">{{ $selectedSummary->proyekPekerja?->nama_pekerja ?? '-' }}
+                            </div>
                         </div>
                         <div>
                             <div class="text-xs font-semibold uppercase">Jabatan</div>
@@ -568,24 +570,31 @@
                         </div>
                         <div>
                             <div class="text-xs font-semibold uppercase">Tarif Harian</div>
-                            <div class="text-sm mt-1">Rp {{ number_format((float) ($selectedSummary->proyekPekerja?->tarif_harian ?? $selectedSummary->tarif_harian ?? 0), 0, ',', '.') }} / Hari</div>
+                            <div class="text-sm mt-1">Rp
+                                {{ number_format((float) ($selectedSummary->proyekPekerja?->tarif_harian ?? ($selectedSummary->tarif_harian ?? 0)), 0, ',', '.') }}
+                                / Hari</div>
                         </div>
                         <div>
                             <div class="text-xs font-semibold uppercase">Tarif Overtime</div>
-                            <div class="text-sm mt-1">Rp {{ number_format((float) ($selectedSummary->proyekPekerja?->tarif_overtime ?? $selectedSummary->tarif_overtime ?? 0), 0, ',', '.') }} / Jam</div>
+                            <div class="text-sm mt-1">Rp
+                                {{ number_format((float) ($selectedSummary->proyekPekerja?->tarif_overtime ?? ($selectedSummary->tarif_overtime ?? 0)), 0, ',', '.') }}
+                                / Jam</div>
                         </div>
                         <div>
                             <div class="text-xs font-semibold uppercase">Status Bayar</div>
                             <div class="text-sm mt-1">
-                                <span class="badge badge-xs h-auto text-[10px] {{ $selectedSummary->status_bayar === \App\Enums\StatusBayar::SUDAH ? 'badge-success' : 'badge-neutral' }}">{{ $selectedSummary->status_bayar->label() }}</span>
+                                <span
+                                    class="badge badge-xs h-auto text-[10px] {{ $selectedSummary->status_bayar === \App\Enums\StatusBayar::SUDAH ? 'badge-success' : 'badge-neutral' }}">{{ $selectedSummary->status_bayar->label() }}</span>
                                 @if ($selectedSummary->tanggal_bayar)
-                                    <span class="text-xs ms-1">{{ $selectedSummary->tanggal_bayar->format('d/m/Y') }}</span>
+                                    <span
+                                        class="text-xs ms-1">{{ $selectedSummary->tanggal_bayar->format('d/m/Y') }}</span>
                                 @endif
                             </div>
                         </div>
                         <div>
                             <div class="text-xs font-semibold uppercase">Periode</div>
-                            <div class="text-sm mt-1">{{ $proyekPenggajian->periode_mulai?->format('d/m/Y') }} — {{ $proyekPenggajian->periode_selesai?->format('d/m/Y') }}</div>
+                            <div class="text-sm mt-1">{{ $proyekPenggajian->periode_mulai?->format('d/m/Y') }} —
+                                {{ $proyekPenggajian->periode_selesai?->format('d/m/Y') }}</div>
                         </div>
                     </div>
 
@@ -603,16 +612,21 @@
                                     <tr>
                                         <td>
                                             <div class="flex flex-col">
-                                                <span class="font-semibold text-xs">{{ $hari->tanggal->locale('id')->translatedFormat('l') }}</span>
-                                                <span class="text-xs">{{ $hari->tanggal->locale('id')->format('d M Y') }}</span>
+                                                <span
+                                                    class="font-semibold text-xs">{{ $hari->tanggal->locale('id')->translatedFormat('l') }}</span>
+                                                <span
+                                                    class="text-xs">{{ $hari->tanggal->locale('id')->format('d M Y') }}</span>
                                             </div>
                                         </td>
-                                        <td class="text-center">{{ rtrim(rtrim(number_format((float) $hari->hari_normal, 1, '.', ''), '0'), '.') ?: '0' }}</td>
+                                        <td class="text-center">
+                                            {{ rtrim(rtrim(number_format((float) $hari->hari_normal, 1, '.', ''), '0'), '.') ?: '0' }}
+                                        </td>
                                         <td class="text-center">{{ (int) $hari->jam_overtime }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="text-center p-3 text-sm">Belum ada pencatatan harian.</td>
+                                        <td colspan="3" class="text-center p-3 text-sm">Belum ada pencatatan
+                                            harian.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -620,20 +634,33 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div class="flex justify-between border-b py-1"><span>Total Hari</span><span class="font-semibold">{{ rtrim(rtrim(number_format((float) $selectedSummary->total_hari, 1, '.', ''), '0'), '.') ?: '0' }} Hari</span></div>
-                        <div class="flex justify-between border-b py-1"><span>Total Overtime</span><span class="font-semibold">{{ number_format((float) $selectedSummary->total_overtime, 0, ',', '.') }} Jam</span></div>
-                        <div class="flex justify-between border-b py-1"><span>Gaji Normal</span><span>Rp {{ number_format((float) $selectedSummary->gaji_normal, 0, ',', '.') }}</span></div>
-                        <div class="flex justify-between border-b py-1"><span>Upah Overtime</span><span>Rp {{ number_format((float) $selectedSummary->upah_overtime, 0, ',', '.') }}</span></div>
-                        <div class="flex justify-between border-b py-1"><span>Bonus</span><span>Rp {{ number_format((float) $selectedSummary->bonus, 0, ',', '.') }}</span></div>
-                        <div class="flex justify-between border-b py-1"><span>Potongan</span><span>Rp {{ number_format((float) $selectedSummary->potongan, 0, ',', '.') }}</span></div>
-                        <div class="flex justify-between border-b py-1"><span>Kasbon</span><span>Rp {{ number_format((float) $selectedSummary->kasbon, 0, ',', '.') }}</span></div>
-                        <div class="flex justify-between border-b py-2 font-bold text-base"><span>Total Bersih</span><span>Rp {{ number_format((float) $selectedSummary->total_bersih, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Total Hari</span><span
+                                class="font-semibold">{{ rtrim(rtrim(number_format((float) $selectedSummary->total_hari, 1, '.', ''), '0'), '.') ?: '0' }}
+                                Hari</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Total Overtime</span><span
+                                class="font-semibold">{{ number_format((float) $selectedSummary->total_overtime, 0, ',', '.') }}
+                                Jam</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Gaji Normal</span><span>Rp
+                                {{ number_format((float) $selectedSummary->gaji_normal, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Upah Overtime</span><span>Rp
+                                {{ number_format((float) $selectedSummary->upah_overtime, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Bonus</span><span>Rp
+                                {{ number_format((float) $selectedSummary->bonus, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Potongan</span><span>Rp
+                                {{ number_format((float) $selectedSummary->potongan, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-1"><span>Kasbon</span><span>Rp
+                                {{ number_format((float) $selectedSummary->kasbon, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between border-b py-2 font-bold text-base"><span>Total
+                                Bersih</span><span>Rp
+                                {{ number_format((float) $selectedSummary->total_bersih, 0, ',', '.') }}</span></div>
                     </div>
 
                     @if ($selectedSummary->keterangan)
                         <div>
                             <div class="text-xs font-semibold uppercase">Keterangan</div>
-                            <div class="text-sm mt-1 whitespace-pre-wrap border border-base-300 rounded p-2 bg-base-200">{{ $selectedSummary->keterangan }}</div>
+                            <div
+                                class="text-sm mt-1 whitespace-pre-wrap border border-base-300 rounded p-2 bg-base-200">
+                                {{ $selectedSummary->keterangan }}</div>
                         </div>
                     @endif
                 </div>
@@ -644,7 +671,8 @@
             <div class="px-4 py-3 border-t border-base-300 flex justify-end gap-2">
                 <label for="modal_summary" class="btn btn-neutral btn-sm">Tutup</label>
                 @if ($selectedSummary && $selectedSummary->status_bayar !== \App\Enums\StatusBayar::SUDAH)
-                    <button type="button" class="btn btn-primary btn-sm" wire:click="openModalPencatatan('{{ $selectedSummary->id }}')" wire:loading.attr="disabled">
+                    <button type="button" class="btn btn-primary btn-sm"
+                        wire:click="openModalPencatatan('{{ $selectedSummary->id }}')" wire:loading.attr="disabled">
                         <x-lucide-pencil class="size-3" />
                         Edit Pencatatan
                     </button>
@@ -697,7 +725,8 @@
                     @error('bayarState.tanggal_bayar')
                         <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                     @enderror
-                    <p class="text-xs text-base-content/60 mt-1">Wajib jika status Sudah Dibayar, kosongkan jika Belum.</p>
+                    <p class="text-xs text-base-content/60 mt-1">Wajib jika status Sudah Dibayar, kosongkan jika Belum.
+                    </p>
                 </div>
 
                 <div>
@@ -715,15 +744,19 @@
 
                 @if ($selectedBayar)
                     <div class="bg-base-200 border border-base-300 rounded p-3 text-xs">
-                        <div class="flex justify-between"><span>Total Bersih</span><span class="font-semibold">Rp {{ number_format((float) $selectedBayar->total_bersih, 0, ',', '.') }}</span></div>
-                        <div class="flex justify-between mt-1"><span>Status saat ini</span><span class="badge badge-xs h-auto text-[10px] {{ $selectedBayar->status_bayar === \App\Enums\StatusBayar::SUDAH ? 'badge-success' : 'badge-neutral' }}">{{ $selectedBayar->status_bayar->label() }}</span></div>
+                        <div class="flex justify-between"><span>Total Bersih</span><span class="font-semibold">Rp
+                                {{ number_format((float) $selectedBayar->total_bersih, 0, ',', '.') }}</span></div>
+                        <div class="flex justify-between mt-1"><span>Status saat ini</span><span
+                                class="badge badge-xs h-auto text-[10px] {{ $selectedBayar->status_bayar === \App\Enums\StatusBayar::SUDAH ? 'badge-success' : 'badge-neutral' }}">{{ $selectedBayar->status_bayar->label() }}</span>
+                        </div>
                     </div>
                 @endif
             </div>
 
             <div class="px-4 py-3 border-t border-base-300 flex justify-end gap-2">
                 <label for="modal_bayar" class="btn btn-ghost btn-sm">Batal</label>
-                <button type="button" class="btn btn-primary btn-sm" wire:click="saveBayar" wire:loading.attr="disabled">
+                <button type="button" class="btn btn-primary btn-sm" wire:click="saveBayar"
+                    wire:loading.attr="disabled">
                     <x-lucide-save class="size-3" />
                     Simpan Status
                 </button>

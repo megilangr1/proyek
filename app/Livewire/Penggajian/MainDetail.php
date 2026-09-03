@@ -210,7 +210,7 @@ class MainDetail extends Component
             $this->state['keterangan'] = $this->selectedProyekPenggajianPekerja->keterangan;
 
             $existingMap = $this->selectedProyekPenggajianPekerja->proyekPenggajianPekerjaHari
-                ->keyBy(fn ($h): string => $h->tanggal->format('Y-m-d'));
+                ->keyBy(fn($h): string => $h->tanggal->format('Y-m-d'));
 
             $hari = [];
             while ($mulai->lte($selesai)) {
@@ -366,8 +366,8 @@ class MainDetail extends Component
         }
 
         $this->validate([
-            'bayarState.status_bayar' => ['required', 'integer', 'in:'.implode(',', array_column(StatusBayar::cases(), 'value'))],
-            'bayarState.tanggal_bayar' => ['nullable', 'date', 'required_if:bayarState.status_bayar,'.StatusBayar::SUDAH->value],
+            'bayarState.status_bayar' => ['required', 'integer', 'in:' . implode(',', array_column(StatusBayar::cases(), 'value'))],
+            'bayarState.tanggal_bayar' => ['nullable', 'date', 'required_if:bayarState.status_bayar,' . StatusBayar::SUDAH->value],
             'bayarState.keterangan' => ['nullable', 'string', 'max:1000'],
         ], [
             'bayarState.tanggal_bayar.required_if' => 'Tanggal bayar wajib diisi jika status sudah dibayar.',
