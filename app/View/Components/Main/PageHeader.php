@@ -9,6 +9,7 @@ use Illuminate\View\Component;
 class PageHeader extends Component
 {
     public string $title;
+
     public string $subtitle;
 
     /**

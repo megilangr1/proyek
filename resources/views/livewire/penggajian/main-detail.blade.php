@@ -1,7 +1,8 @@
 <div class="flex flex-col gap-3">
     <x-main.page-header title="Detail Penggajian - {{ $proyekPenggajian->nama_periode }}"
         subtitle="{{ $proyekPenggajian->periode_mulai?->format('d/m/Y') ?? '-' }} - {{ $proyekPenggajian->periode_selesai?->format('d/m/Y') ?? '-' }}">
-        <a href="{{ route('penggajian.index') }}" class="btn btn-neutral btn-sm" wire:navigate>
+        <a href="{{ route('proyek.detail', ['proyek' => $proyekPenggajian->proyek_id, 'tab' => 'penggajian']) }}"
+            class="btn btn-neutral btn-sm" wire:navigate>
             <x-lucide-arrow-left class="size-4" />
             Kembali
         </a>

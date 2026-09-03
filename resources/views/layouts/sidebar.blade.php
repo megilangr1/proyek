@@ -49,12 +49,6 @@
                 </ul>
             </details>
         </li>
-
-        <li>
-            <a href="{{ route('penggajian.index') }}" wire:current="menu-active" wire:navigate>
-                Penggajian Proyek
-            </a>
-        </li>
     </ul>
 
     <div class="border-t border-base-300 p-3 mt-auto flex flex-col gap-2">

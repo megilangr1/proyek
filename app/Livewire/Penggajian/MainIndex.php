@@ -2,19 +2,19 @@
 
 namespace App\Livewire\Penggajian;
 
+use App\Enums\StatusPekerja;
 use App\Enums\StatusPenggajian;
 use App\Helpers\MainHelper;
+use App\Models\Proyek;
 use App\Models\ProyekPenggajian;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Layout('layouts.app')]
 class MainIndex extends Component
 {
     use WithPagination;
@@ -29,6 +29,9 @@ class MainIndex extends Component
     ];
 
     #[Locked]
+    public ?Proyek $proyekData = null;
+
+    #[Locked]
     public bool $form = false;
 
     /** @var array<string, mixed> */
@@ -37,7 +40,6 @@ class MainIndex extends Component
     /** @var array<string, mixed> */
     #[Locked]
     public array $params = [
-        'proyek_id' => null,
         'nama_periode' => null,
         'periode_mulai' => null,
         'periode_selesai' => null,
@@ -52,20 +54,8 @@ class MainIndex extends Component
     /** @var array<int, string> */
     public array $statusOptions = [];
 
-    #[Locked]
-    public ?int $selectedProyekId = null;
-
-    #[Locked]
-    public ?string $selectedProyekName = null;
-
     #[Url(except: '')]
     public ?string $search = '';
-
-    #[Url(except: '')]
-    public ?int $filterProyekId = null;
-
-    #[Locked]
-    public ?string $filterProyekName = null;
 
     #[Url(except: '')]
     public string $order_by = 'created_at';
@@ -73,8 +63,10 @@ class MainIndex extends Component
     #[Url(except: '')]
     public string $order_type = 'DESC';
 
-    public function mount(): void
+    public function mount($proyek): void
     {
+        $this->proyekData = Proyek::query()->where('id', '=', $proyek)->firstOrFail();
+
         $this->ensureCanManage();
 
         $this->state = $this->params;
@@ -88,21 +80,24 @@ class MainIndex extends Component
         abort_unless($user->isAdmin() || $user->isOperator(), 403);
     }
 
+    private function ensureHasPekerjaAktif(): bool
+    {
+        return $this->proyekData->proyekPekerja()
+            ->where('status', StatusPekerja::AKTIF)
+            ->exists();
+    }
+
     public function render(): View
     {
         $orderBy = in_array($this->order_by, self::ALLOWED_SORT_COLUMNS, true) ? $this->order_by : 'created_at';
         $orderType = strtoupper($this->order_type) === 'ASC' ? 'ASC' : 'DESC';
 
-        $penggajians = ProyekPenggajian::query();
-
-        if ($this->filterProyekId !== null) {
-            $penggajians->where('proyek_id', '=', $this->filterProyekId);
-        }
+        $penggajians = $this->proyekData->proyekPenggajian();
 
         if ($this->search !== '') {
             $penggajians->where(function ($query) {
-                $query->where('nama_periode', 'LIKE', '%' . $this->search . '%')
-                    ->orWhere('keterangan', 'LIKE', '%' . $this->search . '%');
+                $query->where('nama_periode', 'LIKE', '%'.$this->search.'%')
+                    ->orWhere('keterangan', 'LIKE', '%'.$this->search.'%');
             });
         }
 
@@ -110,6 +105,7 @@ class MainIndex extends Component
 
         return view('livewire.penggajian.main-index', [
             'data' => $data,
+            'proyek' => $this->proyekData,
         ]);
     }
 
@@ -121,20 +117,14 @@ class MainIndex extends Component
         $this->state = $this->params;
 
         if ($edit && $this->editData !== null) {
-            $this->state['proyek_id'] = $this->editData->proyek_id;
             $this->state['nama_periode'] = $this->editData->nama_periode;
             $this->state['periode_mulai'] = $this->editData->periode_mulai?->format('Y-m-d');
             $this->state['periode_selesai'] = $this->editData->periode_selesai?->format('Y-m-d');
             $this->state['jam_kerja'] = $this->editData->jam_kerja;
             $this->state['keterangan'] = $this->editData->keterangan;
             $this->state['status'] = $this->editData->status->value;
-
-            $this->selectedProyekId = $this->editData->proyek_id;
-            $this->selectedProyekName = $this->editData->proyek?->nama_proyek;
         } else {
             $this->reset('editData');
-            $this->selectedProyekId = null;
-            $this->selectedProyekName = null;
         }
     }
 
@@ -151,8 +141,13 @@ class MainIndex extends Component
     {
         $this->ensureCanManage();
 
+        if (! $this->ensureHasPekerjaAktif()) {
+            (new MainHelper)->doAlert($this, 'warning', 'Tambahkan pekerja aktif terlebih dahulu sebelum membuat penggajian.');
+
+            return;
+        }
+
         $this->validate([
-            'state.proyek_id' => 'required|exists:proyeks,id',
             'state.nama_periode' => 'required|string',
             'state.periode_mulai' => 'required|date',
             'state.periode_selesai' => 'required|date|after_or_equal:state.periode_mulai',
@@ -160,7 +155,6 @@ class MainIndex extends Component
             'state.keterangan' => 'nullable|string',
             'state.status' => ['required', Rule::enum(StatusPenggajian::class)],
         ], [], [
-            'state.proyek_id' => 'Proyek',
             'state.nama_periode' => 'Nama Periode',
             'state.periode_mulai' => 'Periode Mulai',
             'state.periode_selesai' => 'Periode Selesai',
@@ -170,7 +164,7 @@ class MainIndex extends Component
         ]);
 
         try {
-            ProyekPenggajian::create($this->state);
+            $this->proyekData->proyekPenggajian()->create($this->state);
 
             (new MainHelper)->doAlert($this, 'success', 'Data Penggajian Berhasil di-Buat !');
             $this->showForm(false);
@@ -184,7 +178,7 @@ class MainIndex extends Component
         $this->ensureCanManage();
 
         try {
-            $this->editData = ProyekPenggajian::query()->where('id', '=', $id)->firstOrFail();
+            $this->editData = $this->proyekData->proyekPenggajian()->where('id', '=', $id)->firstOrFail();
             $this->showForm(true, true);
         } catch (\Throwable $th) {
             (new MainHelper)->doAlert($this);
@@ -196,7 +190,6 @@ class MainIndex extends Component
         $this->ensureCanManage();
 
         $this->validate([
-            'state.proyek_id' => 'required|exists:proyeks,id',
             'state.nama_periode' => 'required|string',
             'state.periode_mulai' => 'required|date',
             'state.periode_selesai' => 'required|date|after_or_equal:state.periode_mulai',
@@ -204,7 +197,6 @@ class MainIndex extends Component
             'state.keterangan' => 'nullable|string',
             'state.status' => ['required', Rule::enum(StatusPenggajian::class)],
         ], [], [
-            'state.proyek_id' => 'Proyek',
             'state.nama_periode' => 'Nama Periode',
             'state.periode_mulai' => 'Periode Mulai',
             'state.periode_selesai' => 'Periode Selesai',
@@ -214,7 +206,7 @@ class MainIndex extends Component
         ]);
 
         try {
-            $penggajian = ProyekPenggajian::query()->where('id', '=', $this->editData->id)->firstOrFail();
+            $penggajian = $this->proyekData->proyekPenggajian()->where('id', '=', $this->editData->id)->firstOrFail();
             $penggajian->update($this->state);
 
             (new MainHelper)->doAlert($this, 'info', 'Perubahan Data Penggajian Berhasil di-Simpan !');
@@ -230,7 +222,7 @@ class MainIndex extends Component
         $this->ensureCanManage();
 
         try {
-            ProyekPenggajian::query()->where('id', '=', $id)->firstOrFail()->delete();
+            $this->proyekData->proyekPenggajian()->where('id', '=', $id)->firstOrFail()->delete();
 
             (new MainHelper)->doAlert($this, 'warning', 'Data Penggajian Berhasil di-Hapus !');
 
@@ -260,34 +252,5 @@ class MainIndex extends Component
     public function updatedSearch($value): void
     {
         $this->resetPage();
-    }
-
-    public function openProyekPicker(string $context = 'form'): void
-    {
-        $this->dispatch('openProyekPicker', context: $context);
-    }
-
-    public function clearProyekSelection(): void
-    {
-        $this->state['proyek_id'] = null;
-        $this->selectedProyekId = null;
-        $this->selectedProyekName = null;
-        $this->filterProyekId = null;
-        $this->filterProyekName = null;
-    }
-
-    #[On('proyekSelected')]
-    public function handleProyekSelected(int $id, string $nama, string $context = 'form'): void
-    {
-        if ($context === 'filter') {
-            $this->filterProyekId = $id;
-            $this->filterProyekName = $nama;
-
-            return;
-        }
-
-        $this->state['proyek_id'] = $id;
-        $this->selectedProyekId = $id;
-        $this->selectedProyekName = $nama;
     }
 }

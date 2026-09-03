@@ -1,82 +1,8 @@
 <div class="flex flex-col gap-3">
-    <x-main.page-header title="Pekerja Proyek">
-        <a href="{{ route('proyek.index') }}" wire:navigate class="btn btn-neutral btn-sm">Kembali</a>
-        <button type="button" class="btn btn-neutral btn-sm" wire:click="showForm(true)"
-            @if ($form) disabled @endif>Tambah Data</button>
-    </x-main.page-header>
-
-    {{-- Compact Hero + Tabs — user-friendly, less scroll --}}
-    <div class="card border border-base-300 bg-base-100 overflow-hidden" data-motion="fade-up">
-        <div class="bg-gradient-to-r from-primary/10 via-base-100 to-secondary/10 px-5 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="size-9 rounded-xl bg-primary text-primary-content grid place-items-center shrink-0">
-                    <x-lucide-building-2 class="size-5" />
-                </div>
-                <div class="min-w-0">
-                    <h3 class="font-bold leading-none truncate flex items-center gap-2">
-                        {{ $proyek->nama_proyek ?? '-' }}
-                        <span class="badge badge-sm font-mono badge-ghost">{{ $proyek->kode_proyek ?? '-' }}</span>
-                        <span
-                            class="badge badge-xs @if ($proyek->status === \App\Enums\StatusProyek::AKTIF) badge-success @else badge-ghost @endif">{{ $proyek->status->label() }}</span>
-                    </h3>
-                    <p class="text-xs text-base-content/60 truncate mt-1 flex items-center gap-1.5">
-                        <x-lucide-user class="size-3" /> {{ $proyek->pemilik ?? '-' }}
-                        <span class="opacity-30">•</span> <x-lucide-map-pin class="size-3" /> {{ $proyek->lokasi ?? '-' }}
-                        <span class="opacity-30 hidden sm:inline">•</span>
-                        <span class="hidden sm:inline-flex items-center gap-1"><x-lucide-calendar-range class="size-3" />
-                            {{ $proyek->tanggal_mulai?->format('d/m/Y') }}–{{ $proyek->tanggal_selesai?->format('d/m/Y') }}</span>
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <div class="hidden sm:flex items-center gap-1 text-xs">
-                    <span class="badge badge-neutral badge-sm gap-1"><x-lucide-users class="size-3" /> {{ $stats['total'] ?? 0 }} pekerja</span>
-                    <span class="badge badge-ghost badge-sm">Rp {{ number_format($stats['sumHarian'] ?? 0, 0, ',', '.') }}/hr</span>
-                </div>
-                <a href="{{ route('proyek.index') }}" wire:navigate class="btn btn-sm btn-ghost gap-1">
-                    <x-lucide-arrow-left class="size-4" /> Kembali
-                </a>
-                <button type="button" class="btn btn-sm btn-primary gap-1" wire:click="showForm(true)" @if ($form) disabled @endif>
-                    <x-lucide-user-plus class="size-4" /> Tambah
-                </button>
-            </div>
-        </div>
-        {{-- Inline compact meta --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 divide-x divide-base-300 border-t border-base-300 bg-base-200/30 text-xs">
-            <div class="px-4 py-2.5 flex items-center justify-between">
-                <span class="text-base-content/50 flex items-center gap-1"><x-lucide-users class="size-3" /> Pekerja</span>
-                <span class="font-semibold">{{ $stats['total'] ?? 0 }} <span class="text-base-content/50 font-normal">({{ $stats['aktif'] ?? 0 }} aktif)</span></span>
-            </div>
-            <div class="px-4 py-2.5 flex items-center justify-between">
-                <span class="text-base-content/50">Durasi</span>
-                <span class="font-semibold">{{ $stats['durasiHari'] ?? '-' }} hari</span>
-            </div>
-            <div class="px-4 py-2.5 flex items-center justify-between">
-                <span class="text-base-content/50">Avg Tarif</span>
-                <span class="font-mono font-semibold text-xs">Rp {{ number_format($stats['avgHarian'] ?? 0, 0, ',', '.') }}</span>
-            </div>
-            <div class="px-4 py-2.5 flex items-center justify-between">
-                <span class="text-base-content/50">Jabatan Top</span>
-                <span class="font-semibold truncate max-w-[10rem] text-xs">
-                    @if (($stats['jabatans'] ?? collect())->isNotEmpty())
-                        {{ $stats['jabatans']->keys()->first() }} ({{ $stats['jabatans']->first() }})
-                    @else
-                        -
-                    @endif
-                </span>
-            </div>
-        </div>
-    </div>
-
-    {{-- Tabs antar modul — clear hierarchy --}}
-    <div role="tablist" class="tabs tabs-boxed bg-base-200 p-1 w-fit" data-motion="fade-up">
-        <a role="tab" class="tab tab-active gap-1"><x-lucide-users class="size-4" /> Pekerja</a>
-        <a href="{{ route('proyek.pengeluaran.index', $proyek->id) }}" wire:navigate role="tab" class="tab gap-1">
-            <x-lucide-receipt class="size-4" /> Pengeluaran
-        </a>
-        <a href="{{ route('penggajian.index', ['filterProyekId' => $proyek->id]) }}" wire:navigate role="tab" class="tab gap-1">
-            <x-lucide-wallet class="size-4" /> Penggajian
-        </a>
+    <div class="flex items-center justify-end">
+        <button type="button" class="btn btn-sm btn-primary gap-1" wire:click="showForm(true)" @if ($form) disabled @endif>
+            <x-lucide-user-plus class="size-4" /> Tambah Pekerja
+        </button>
     </div>
 
     <div class="card border border-base-300 bg-base-100 w-full {{ $form ? 'block' : 'hidden' }}" data-motion="scale-in">

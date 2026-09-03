@@ -138,12 +138,10 @@ use App\Http\Controllers\MainController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard\MainIndex as DashboardMainIndex;
 use App\Livewire\MasterData\Pengguna\MainIndex as PenggunaMainIndex;
+use App\Livewire\MasterData\Proyek\MainDetail as ProyekMainDetail;
 use App\Livewire\MasterData\Proyek\MainIndex as ProyekMainIndex;
-use App\Livewire\MasterData\ProyekPekerja\MainIndex as ProyekPekerjaMainIndex;
-use App\Livewire\MasterData\ProyekPengeluaran\MainIndex as ProyekPengeluaranMainIndex;
-use App\Livewire\Penggajian\MainIndex as PenggajianMainIndex;
-use App\Livewire\Penggajian\MainDetail as PenggajianMainDetail;
 use App\Livewire\Pages\Main;
+use App\Livewire\Penggajian\MainDetail as PenggajianMainDetail;
 use Illuminate\Support\Facades\Route;
 
 Route::livewire('/', Main::class)->name('main');
@@ -160,12 +158,10 @@ Route::middleware('auth')->group(function () {
     Route::prefix('master-data')->group(function () {
         Route::livewire('/pengguna', PenggunaMainIndex::class)->name('pengguna.index');
         Route::livewire('/proyek', ProyekMainIndex::class)->name('proyek.index');
-        Route::livewire('/proyek/{proyek}/pekerja', ProyekPekerjaMainIndex::class)->name('proyek.pekerja.index');
-        Route::livewire('/proyek/{proyek}/pengeluaran', ProyekPengeluaranMainIndex::class)->name('proyek.pengeluaran.index');
+        Route::livewire('/proyek/{proyek}/detail', ProyekMainDetail::class)->name('proyek.detail');
     });
 
     Route::prefix('penggajian')->name('penggajian.')->group(function () {
-        Route::livewire('/', PenggajianMainIndex::class)->name('index'); // filter ?filterProyekId=xx (#[Url])
         Route::livewire('/{penggajian}/detail', PenggajianMainDetail::class)->name('detail');
     });
 });
@@ -174,10 +170,11 @@ Route::middleware('auth')->group(function () {
 - Komponen Livewire berupa class di `App\Livewire` (view terpisah di `resources/views/livewire`).
   `Route::livewire()` menerima FQCN class, mis. `Login::class`.
 - Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
-  logout via route POST. `/dashboard`, `/pengguna`, `/proyek`, `/proyek/{proyek}/pekerja` &
-  `/penggajian` wajib login; `/login` hanya untuk guest.
-- **Main‑detail:** list `Proyek` (`/proyek`) punya popover **Aksi** dengan 3 link `Detail Pekerja` (`proyek.pekerja.index`), `Detail Pengeluaran` (`proyek.pengeluaran.index`), `Penggajian` (`penggajian.index?filterProyekId=xx`) — halaman rincian Proyek + **CRUD child** (`ProyekPekerja` compact hero + tabs + stats; `ProyekPengeluaran` Rupiah + kategori). Route param `{proyek}` diteruskan ke `mount()` dan di‑resolve jadi model (jangan namai properti public sama dengan nama route param).
-- Perlu rute/guard baru? Pakai middleware `auth`/`guest` dan `Route::livewire()`.
+  logout via route POST. `/dashboard`, `/pengguna`, `/proyek`, `/proyek/{proyek}/detail` wajib login; `/login` hanya untuk guest.
+- **Detail proyek (`/proyek/{proyek}/detail`)** — halaman konsolidasi dengan tab (Pekerja / Pengeluaran / Penggajian). Parent `MainDetail` render hero + tabs + child panel per tab via `<livewire:...>` nested. CRUD pekerja & pengeluaran = child inline; CRUD penggajian = child panel per-proyek (gating: butuh pekerja aktif).
+- **Rincian penggajian per-pekerja** tetap sub-halaman `/penggajian/{id}/detail` (3 modal: pencatatan upah + summary + bayar).
+- Route lama `proyek.pekerja.index`, `proyek.pengeluaran.index`, `penggajian.index` (global) sudah dihapus.
+- Route param `{proyek}` diteruskan ke `mount()` dan di‑resolve jadi model (jangan namai properti public sama dengan nama route param).
 
 ### 4.2 Branding (config-driven)
 
@@ -320,14 +317,8 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
 - Dashboard (`dashboard`) masih kerangka; layout drawer+sidebar+navbar sudah ada.
 - `app/Http/Controllers/MainController.php` masih dipakai untuk route `logout` (POST `/logout`);
   bukan orphan. File `resources/views/main.blade.php` & `welcome.blade.php` sudah dihapus.
-- **Sudah ada:** main‑detail Proyek + CRUD child `ProyekPekerja` di `/proyek/{proyek}/pekerja`
-  (route `proyek.pekerja.index`, **compact hero + tabs Pekerja/Pengeluaran/Penggajian + inline stats**, refactor 2026-09-02), enum `StatusPekerja`, model `ProyekPekerja` + FK `proyek_pekerjas.proyek_id`, factory & feature test terkait.
-- **Sudah ada:** main‑detail Proyek + CRUD child `ProyekPengeluaran` di `/proyek/{proyek}/pengeluaran` (route `proyek.pengeluaran.index`), enum `KategoriPengeluaran` + `StatusPengeluaran`, model `ProyekPengeluaran` (tanggal, kategori, nama_item, nominal Rupiah `decimal(15,2)`, keterangan, status) + FK `proyek_pengeluarans.proyek_id`, factory & `ProyekPengeluaranCrudTest` (child param), hero+stats+tabs mirip Pekerja.
-- **Sudah ada:** CRUD `ProyekPenggajian` di `/penggajian` (route `penggajian.index` + `filterProyekId` `#[Url]` untuk link dari Proyek), enum `StatusPenggajian`, model `ProyekPenggajian` + FK `proyek_penggajians.proyek_id`, serta **modal picker Proyek** (`ProyekPickerModal`) untuk pilih Proyek di form & filter.
-- **Sudah ada:** Halaman detail Penggajian di `/penggajian/{penggajian}/detail` (route `penggajian.detail`),
-  komponen `MainDetail` + view `main-detail.blade.php` — **update 2026-09-02**: bukan lagi read-only; ada 3 modal per pekerja — (1) pencatatan upah (`openModalPencatatan`, `saveData` validate `hari_normal in:0,0.5,1`, `jam_overtime 0..24`, `bonus/potongan/kasbon required|numeric`, `keterangan` textarea + prune hari di luar periode), (2) summary read-only (`openSummary`, tabel hari + totals `gaji_normal/upah_overtime/total_bersih`), (3) ubah status bayar (`openBayarModal`/`saveBayar` — `status_bayar` enum + `tanggal_bayar required_if SUDAH` + `keterangan` existing terisi). `prepareState()` `firstOrCreate` (preserve data) auto-sync pekerja dari `proyek.proyekPekerja`, `getTotalUpahProperty` pure, `border-base-300` konsisten, `type="number"` + lock pencatatan saat `SUDAH`.
-- **Sudah ada:** Sub-modul penggajian per pekerja: `ProyekPenggajianPekerja` (`tarif_overtime` rename + `decimal(15,2)` 2026-09-02) + `ProyekPenggajianPekerjaHari`,
-  tabel `proyek_penggajian_pekerjas` & `proyek_penggajian_pekerja_haris` (decimal 15,2), enum `StatusBayar` (`BELUM`/`SUDAH`, label "Belum/Sudah di-Bayar"). `ProyekPenggajian::proyekPenggajianPekerja()` HasMany ditambah 2026-09-02. Aksi tabel: `Lihat Summary` + `Pencatatan Upah` (disabled saat SUDAH) + `Ubah Status Bayar`. Popover Proyek now 3 link: Pekerja, Pengeluaran, Penggajian (filtered).
+- **Sudah ada:** Detail Proyek (`/proyek/{proyek}/detail`) — halaman konsolidasi dengan hero + tabs (Pekerja / Pengeluaran / Penggajian). Parent `MainDetail` (`MasterData/Proyek/MainDetail`) render child panel per tab via `<livewire:...>` nested. CRUD Pekerja & Pengeluaran = child inline (`ProyekPekerja\MainIndex`, `ProyekPengeluaran\MainIndex`) tanpa `#[Layout]` (nested panel). CRUD Penggajian = child `Penggajian\MainIndex` per-proyek (gating: butuh pekerja aktif). Route `proyek.detail`. Tab via `#[Url(except:'pekerja')]`.
+- **Sudah ada:** Sub-modul penggajian per pekerja: `/penggajian/{id}/detail` (route `penggajian.detail`), komponen `MainDetail` + view — **3 modal per pekerja**: pencatatan upah (`hari_normal in:0,0.5,1`, `jam_overtime 0..24`, `bonus/potongan/kasbon` required, `keterangan` textarea + prune hari di luar periode), summary read-only (tabel hari + totals `gaji_normal/upah_overtime/total_bersih`), ubah status bayar (`status_bayar` enum + `tanggal_bayar required_if SUDAH` + `keterangan` existing terisi). `prepareState()` `firstOrCreate` (preserve data) auto-sync pekerja dari `proyek.proyekPekerja`, border-base-300 konsisten, `type="number"` + lock pencatatan saat `SUDAH`.
 
 ---
 

@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\StatusPekerja;
 use App\Livewire\Penggajian\MainIndex;
 use App\Models\Proyek;
+use App\Models\ProyekPekerja;
 use App\Models\ProyekPenggajian;
 use App\Models\User;
 use Livewire\Livewire;
@@ -13,29 +15,35 @@ beforeEach(function () {
     Role::firstOrCreate(['name' => 'operator']);
 });
 
-test('administrator can view the penggajian page', function () {
+test('administrator can view the penggajian panel', function () {
     $admin = User::factory()->create();
     $admin->assignRole('administrator');
 
+    $proyek = Proyek::factory()->create();
+
     Livewire::actingAs($admin)
-        ->test(MainIndex::class)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
         ->assertOk();
 });
 
-test('operator can view the penggajian page', function () {
+test('operator can view the penggajian panel', function () {
     $operator = User::factory()->create();
     $operator->assignRole('operator');
 
+    $proyek = Proyek::factory()->create();
+
     Livewire::actingAs($operator)
-        ->test(MainIndex::class)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
         ->assertOk();
 });
 
-test('user without role cannot access the penggajian page', function () {
+test('user without role cannot access the penggajian panel', function () {
     $user = User::factory()->create();
 
+    $proyek = Proyek::factory()->create();
+
     Livewire::actingAs($user)
-        ->test(MainIndex::class)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
         ->assertForbidden();
 });
 
@@ -44,10 +52,10 @@ test('administrator can create a penggajian', function () {
     $admin->assignRole('administrator');
 
     $proyek = Proyek::factory()->create();
+    ProyekPekerja::factory()->create(['proyek_id' => $proyek->id, 'status' => StatusPekerja::AKTIF]);
 
     Livewire::actingAs($admin)
-        ->test(MainIndex::class)
-        ->set('state.proyek_id', $proyek->id)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
         ->set('state.nama_periode', 'Minggu 1')
         ->set('state.periode_mulai', '2026-01-01')
         ->set('state.periode_selesai', '2026-01-07')
@@ -61,15 +69,34 @@ test('administrator can create a penggajian', function () {
         ->proyek_id->toBe($proyek->id);
 });
 
-test('create validates date order and jam_kerja', function () {
+test('create without active worker is rejected', function () {
     $admin = User::factory()->create();
     $admin->assignRole('administrator');
 
     $proyek = Proyek::factory()->create();
 
     Livewire::actingAs($admin)
-        ->test(MainIndex::class)
-        ->set('state.proyek_id', $proyek->id)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
+        ->set('state.nama_periode', 'Minggu 1')
+        ->set('state.periode_mulai', '2026-01-01')
+        ->set('state.periode_selesai', '2026-01-07')
+        ->set('state.jam_kerja', 40)
+        ->set('state.status', 1)
+        ->call('actionForm')
+        ->assertHasNoErrors();
+
+    expect(ProyekPenggajian::where('nama_periode', 'Minggu 1')->exists())->toBeFalse();
+});
+
+test('create validates date order and jam_kerja', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('administrator');
+
+    $proyek = Proyek::factory()->create();
+    ProyekPekerja::factory()->create(['proyek_id' => $proyek->id, 'status' => StatusPekerja::AKTIF]);
+
+    Livewire::actingAs($admin)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
         ->set('state.nama_periode', 'Minggu Salah')
         ->set('state.periode_mulai', '2026-01-07')
         ->set('state.periode_selesai', '2026-01-01')
@@ -85,10 +112,16 @@ test('administrator can edit a penggajian', function () {
     $admin = User::factory()->create();
     $admin->assignRole('administrator');
 
-    $target = ProyekPenggajian::factory()->create(['nama_periode' => 'Nama Lama']);
+    $proyek = Proyek::factory()->create();
+    ProyekPekerja::factory()->create(['proyek_id' => $proyek->id, 'status' => StatusPekerja::AKTIF]);
+
+    $target = ProyekPenggajian::factory()->create([
+        'proyek_id' => $proyek->id,
+        'nama_periode' => 'Nama Lama',
+    ]);
 
     Livewire::actingAs($admin)
-        ->test(MainIndex::class)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
         ->call('doEdit', $target->id)
         ->set('state.nama_periode', 'Nama Baru')
         ->call('actionForm')
@@ -97,41 +130,15 @@ test('administrator can edit a penggajian', function () {
     expect(ProyekPenggajian::find($target->id)->nama_periode)->toBe('Nama Baru');
 });
 
-test('proyek picker sets the selected proyek on the form', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('administrator');
-
-    $proyek = Proyek::factory()->create();
-
-    Livewire::actingAs($admin)
-        ->test(MainIndex::class)
-        ->call('handleProyekSelected', id: $proyek->id, nama: $proyek->nama_proyek)
-        ->assertSet('state.proyek_id', $proyek->id)
-        ->assertSet('selectedProyekId', $proyek->id)
-        ->assertSet('selectedProyekName', $proyek->nama_proyek);
-});
-
-test('proyek picker sets the filter proyek', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('administrator');
-
-    $proyek = Proyek::factory()->create();
-
-    Livewire::actingAs($admin)
-        ->test(MainIndex::class)
-        ->call('handleProyekSelected', id: $proyek->id, nama: $proyek->nama_proyek, context: 'filter')
-        ->assertSet('filterProyekId', $proyek->id)
-        ->assertSet('filterProyekName', $proyek->nama_proyek);
-});
-
 test('administrator can soft delete a penggajian', function () {
     $admin = User::factory()->create();
     $admin->assignRole('administrator');
 
-    $target = ProyekPenggajian::factory()->create();
+    $proyek = Proyek::factory()->create();
+    $target = ProyekPenggajian::factory()->create(['proyek_id' => $proyek->id]);
 
     Livewire::actingAs($admin)
-        ->test(MainIndex::class)
+        ->test(MainIndex::class, ['proyek' => $proyek->id])
         ->call('doDelete', $target->id);
 
     $this->assertSoftDeleted('proyek_penggajians', ['id' => $target->id]);

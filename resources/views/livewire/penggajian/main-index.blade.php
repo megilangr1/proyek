@@ -1,8 +1,21 @@
 <div class="flex flex-col gap-3">
-    <x-main.page-header title="Penggajian Proyek">
-        <button type="button" class="btn btn-neutral btn-sm" wire:click="showForm(true)"
-            @if ($form) disabled @endif>Tambah Data</button>
-    </x-main.page-header>
+    <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 text-sm text-base-content/60">
+            <span class="badge badge-ghost badge-sm gap-1">
+                <x-lucide-wallet class="size-3" /> {{ $data->total() }} periode
+            </span>
+            @unless ($proyek->proyekPekerja()->where('status', \App\Enums\StatusPekerja::AKTIF)->exists())
+                <span class="badge badge-warning badge-sm gap-1">
+                    <x-lucide-alert-circle class="size-3" /> Tambah pekerja aktif dulu
+                </span>
+            @endunless
+        </div>
+        <button type="button" class="btn btn-sm btn-primary gap-1" wire:click="showForm(true)"
+            @if ($form) disabled @endif
+            @unless ($proyek->proyekPekerja()->where('status', \App\Enums\StatusPekerja::AKTIF)->exists()) disabled @endunless>
+            <x-lucide-plus class="size-4" /> Tambah Periode
+        </button>
+    </div>
 
     <div class="card border border-base-300 bg-base-100 w-full {{ $form ? 'block' : 'hidden' }}">
         <div class="card-body p-0">
@@ -17,38 +30,6 @@
             </div>
             <form wire:submit="actionForm">
                 <div class="w-full grid grid-cols-6 px-6 pb-2 gap-3">
-
-                    <div class="col-span-6 md:col-span-6 lg:col-span-3">
-                        <label for="pilih-proyek"
-                            class="block text-sm font-medium mb-2 {{ $errors->has('state.proyek_id') ? 'text-red-500' : '' }}">
-                            Proyek :
-                            <span class="text-red-500 text-xs">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="hidden" wire:model="state.proyek_id" id="proyek_id" name="proyek_id">
-                            <div class="flex gap-2">
-                                <input type="text" value="{{ $selectedProyekName ?? '' }}" readonly
-                                    class="w-full input input-bordered @error('state.proyek_id') input-error @enderror bg-base-200"
-                                    placeholder="Belum ada proyek dipilih..." aria-describedby="proyek_id-helper">
-                                <button type="button" class="btn btn-neutral shrink-0"
-                                    wire:click="openProyekPicker('form')" id=pilih-proyek>
-                                    <x-lucide-search class="size-4" />
-                                    Pilih
-                                </button>
-                                @if ($selectedProyekId)
-                                    <button type="button" class="btn btn-ghost btn-square shrink-0"
-                                        wire:click="clearProyekSelection" title="Hapus pilihan proyek">
-                                        <x-lucide-x class="size-4" />
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                        @error('state.proyek_id')
-                            <p class="text-xs text-red-600 mt-1" id="proyek_id-helper">
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
 
                     <div class="col-span-6 md:col-span-6 lg:col-span-3">
                         <label for="nama_periode"
@@ -270,7 +251,6 @@
             <thead>
                 <tr>
                     <td class="text-center" width="6%">No.</td>
-                    <td>Proyek</td>
                     <td>
                         <x-table.th label="Nama Periode" field="nama_periode" :orderBy="$order_by" :orderType="$order_type" />
                     </td>
@@ -293,7 +273,6 @@
                     <tr>
                         <td class="text-center bg-slate-200">
                             {{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}.</td>
-                        <td>{{ $item->proyek?->nama_proyek ?? '-' }}</td>
                         <td>{{ $item->nama_periode ?? '-' }}</td>
                         <td>{{ $item->periode_mulai?->format('d/m/Y') ?? '-' }}</td>
                         <td>{{ $item->periode_selesai?->format('d/m/Y') ?? '-' }}</td>
@@ -342,7 +321,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center p-2">Belum Ada Data</td>
+                        <td colspan="8" class="text-center p-2">Belum Ada Data</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -352,6 +331,4 @@
     <div class="w-full {{ $form ? 'hidden' : 'block' }}">
         {{ $data->onEachSide(1)->links() }}
     </div>
-
-    <livewire:master-data.proyek.proyek-picker-modal />
 </div>

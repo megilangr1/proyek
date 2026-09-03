@@ -20,11 +20,11 @@ class ProyekPenggajianFactory extends Factory
     public function definition(): array
     {
         $periodeMulai = fake()->dateTimeBetween('-1 month', '+1 month');
-        $periodeSelesai = (clone $periodeMulai)->modify('+' . fake()->numberBetween(1, 7) . ' days');
+        $periodeSelesai = (clone $periodeMulai)->modify('+'.fake()->numberBetween(1, 7).' days');
 
         return [
             'proyek_id' => Proyek::factory(),
-            'nama_periode' => 'Minggu ' . fake()->numberBetween(1, 52),
+            'nama_periode' => 'Minggu '.fake()->numberBetween(1, 52),
             'periode_mulai' => $periodeMulai->format('Y-m-d'),
             'periode_selesai' => $periodeSelesai->format('Y-m-d'),
             'jam_kerja' => fake()->numberBetween(1, 255),

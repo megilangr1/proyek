@@ -22,7 +22,7 @@ class ProyekFactory extends Factory
         $tanggalSelesai = fake()->dateTimeBetween($tanggalMulai, '+2 years');
 
         return [
-            'kode_proyek' => 'PRJ' . str_pad((string) fake()->unique()->numberBetween(1, 998), 3, '0', STR_PAD_LEFT),
+            'kode_proyek' => 'PRJ'.str_pad((string) fake()->unique()->numberBetween(1, 998), 3, '0', STR_PAD_LEFT),
             'nama_proyek' => fake()->sentence(3),
             'pemilik' => fake()->company(),
             'lokasi' => fake()->address(),
