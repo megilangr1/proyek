@@ -3,10 +3,11 @@
         data-motion-duration="4.5">
         <div class="rounded-xl bg-base-100 p-6 sm:p-8">
             <div class="mb-6 flex flex-col items-center text-center" data-motion="fade-up">
-                <img src="{{ asset('img/logo.png') }}" alt="{{ config('main_config.short_name') }}"
-                    class="h-14 w-14 rounded-2xl shadow-lg" />
+                <img src="{{ asset('img/logo-clear.png') }}" alt="{{ config('main_config.short_name') }}"
+                    class="h-24 md:h-30 lg:h-36 w-auto rounded-2xl"
+                    :class="theme === 'luxury' ? 'invert-100' : 'invert-0'" />
                 <h1 class="mt-4 text-2xl font-extrabold">
-                    Masuk ke <span class="text-gradient">{{ config('main_config.short_name') }}</span>
+                    Login
                 </h1>
                 <p class="mt-1 text-sm text-base-content/60">Selamat datang kembali, silakan lanjut.</p>
             </div>

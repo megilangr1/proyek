@@ -17,7 +17,8 @@
                         <div class="rounded-xl bg-base-100 p-6">
                             <div class="mb-4 flex items-center justify-between">
                                 <div class="flex items-center gap-2">
-                                    <img src="{{ asset('img/logo.png') }}" alt="logo" class="h-7 w-7 rounded-md" />
+                                    <img src="{{ asset('img/short-logo-clear.png') }}" alt="logo"
+                                        class="h-7 w-7 rounded-md" />
                                     <div>
                                         <p class="text-sm opacity-60">Rekap Bulanan</p>
                                         <p class="text-sm font-bold">Mei 2026</p>
@@ -384,8 +385,9 @@
             class="rounded-3xl bg-linear-to-r from-primary via-secondary to-primary p-0.5 shadow-xl">
             <div class="card rounded-3xl border-0 bg-primary text-primary-content">
                 <div class="card-body items-center gap-6 py-16 text-center">
-                    <img src="{{ asset('img/logo.png') }}" alt="{{ config('main_config.short_name') }}"
-                        class="h-12 w-12 rounded-xl bg-primary-content/10 p-1" />
+                    <img src="{{ asset('img/logo-clear.png') }}" alt="{{ config('main_config.short_name') }}"
+                        class="h-24 md:h-30 lg:h-36 w-auto rounded-xl p-1"
+                        :class="theme === 'luxury' ? 'bg-white' : '  bg-transparent'" />
                     <h2 class="text-3xl font-bold sm:text-5xl">Siap merapikan data Anda?</h2>
                     <p class="max-w-xl opacity-90">
                         Mulai gratis dan rasakan betapa mudahnya pendataan dan rekap yang pintar.

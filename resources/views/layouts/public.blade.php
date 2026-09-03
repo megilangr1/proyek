@@ -32,10 +32,9 @@
     <header class="sticky top-0 z-50 border-b border-base-200 bg-base-100/80 backdrop-blur">
         <nav class="navbar max-w-6xl mx-auto px-4">
             <div class="navbar-start">
-                <a href="#home" class="btn btn-ghost text-xl font-bold normal-case gap-2">
-                    <img src="{{ asset('img/logo.png') }}" alt="{{ config('main_config.short_name') }}"
-                        class="h-8 w-8 rounded-lg" />
-                    <span>{{ config('main_config.short_name') }}</span>
+                <a href="{{ route('main') }}" wire:navigate>
+                    <img src="{{ asset('img/logo-clear.png') }}" alt="{{ config('main_config.short_name') }}"
+                        class="h-12 w-auto rounded-lg" :class="theme === 'luxury' ? 'invert-100' : 'invert-0'" />
                 </a>
             </div>
 
