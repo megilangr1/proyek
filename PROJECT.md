@@ -15,6 +15,8 @@ melengkapi, bukan menggantikan, `AGENTS.md`.
 - **Status:** Sudah migrasi, build, auth (login/logout) jalan, landing page sudah direfactor
   (glassmorphism + Motion + Lucide). Dashboard sudah ada (kerangka); area master-data mulai diisi.
   Detail Penggajian (`/penggajian/{id}/detail`) sudah ada 3 modal: pencatatan upah + summary read-only + ubah status bayar (per 2026-09-02 — Q5), auto-sync pekerja + prune hari, hitung `total_bersih` server-side.
+  Proyek punya `nilai_proyek` (`decimal 15,2`, nullable, per 2026-09-03) + ringkasan kas di Detail Proyek
+  (Nilai − (Pengeluaran + Penggajian) = Sisa Kas, badge Surplus/Defisit).
 
 ---
 
@@ -72,15 +74,15 @@ app/
     Auth/Login.php                      # GET /login       -> layouts.auth
     Dashboard/MainIndex.php             # GET /dashboard    -> layouts.app
     MasterData/Pengguna/MainIndex.php   # GET /pengguna     -> layouts.app
-    MasterData/Proyek/MainIndex.php     # GET /proyek      -> layouts.app
-    MasterData/Proyek/ProyekPickerModal.php # modal picker Proyek (child, bukan full-page)
-    MasterData/ProyekPekerja/MainIndex.php # GET /proyek/{proyek}/pekerja -> layouts.app (compact hero + tabs + CRUD child, stats pekerja)
-    MasterData/ProyekPengeluaran/MainIndex.php # GET /proyek/{proyek}/pengeluaran -> layouts.app (child CRUD pengeluaran, Rupiah, glass+stats)
-    Penggajian/MainIndex.php            # GET /penggajian -> layouts.app (CRUD; pakai ProyekPickerModal; filterProyekId Url)
+    MasterData/Proyek/MainIndex.php     # GET /proyek      -> layouts.app (CRUD + input Rupiah nilai_proyek, kolom sortable nilai_proyek)
+    MasterData/Proyek/MainDetail.php    # GET /proyek/{proyek}/detail -> layouts.app (parent: hero + ringkasan kas + tabs, render child panel per tab)
+    MasterData/ProyekPekerja/MainIndex.php # child panel tab Pekerja (tanpa #[Layout]; CRUD inline + stats)
+    MasterData/ProyekPengeluaran/MainIndex.php # child panel tab Pengeluaran (tanpa #[Layout]; CRUD + Rupiah + stats sumNominal)
+    Penggajian/MainIndex.php            # child panel tab Penggajian (tanpa #[Layout]; mount($proyek), proyek implisit, gating pekerja aktif)
     Penggajian/MainDetail.php           # GET /penggajian/{penggajian}/detail -> layouts.app (detail + 3 modal: pencatatan + summary + bayar)
   Helpers/MainHelper.php                # userData() + doAlert() (notif server -> client)
   Models/User.php                       # Authenticatable + HasRoles + SoftDeletes; isAdmin()/isOperator()/user_role
-  Models/Proyek.php                     # #[Fillable]; casts StatusProyek (enum); HasFactory + SoftDeletes; pekerjas()/penggajians()
+  Models/Proyek.php                     # #[Fillable] (+ nilai_proyek 2026-09-03); casts date + nilai_proyek decimal:2 (DB decimal 15,2 nullable) + StatusProyek enum; HasFactory + SoftDeletes; proyekPekerja()/proyekPengeluaran()/proyekPenggajian() HasMany
   Models/ProyekPekerja.php              # #[Fillable]; casts decimal:2 (DB decimal 15,2); StatusPekerja enum; HasFactory + SoftDeletes; proyek()
   Models/ProyekPengeluaran.php          # #[Fillable]; casts date + KategoriPengeluaran + StatusPengeluaran + decimal:2 (15,2) nominal; HasFactory + SoftDeletes; proyek()
   Models/ProyekPenggajian.php           # #[Fillable]; casts date + StatusPenggajian (enum); HasFactory + SoftDeletes; proyek()/proyekPenggajianPekerja() HasMany
@@ -98,8 +100,10 @@ app/
 config/
   livewire.php                          # make_command.type => 'class'; emoji => false; class_namespace App\Livewire
   main_config.php                       # branding (name, short_name, tagline, description)
-  routes/web.php                          # Route::livewire(FQCN) + logout POST
-  database/factories/ProyekFactory.php     # factory Proyek (tanggal terurut, kode PRJnnn)
+routes/
+  web.php                               # Route::livewire(FQCN) + logout POST
+  database/factories/ProyekFactory.php     # factory Proyek (tanggal terurut, kode PRJnnn, nilai_proyek random 50jt–5M)
+  database/migrations/2026_09_03_115050_add_nilai_proyek_to_proyeks_table.php # tambah nilai_proyek decimal(15,2) nullable after tanggal_selesai
   database/factories/ProyekPekerjaFactory.php # factory ProyekPekerja (proyek_id => Proyek::factory())
   resources/views/
     livewire/                             # blade views untuk class components
@@ -107,11 +111,11 @@ config/
       auth/login.blade.php
       dashboard/main-index.blade.php
       master-data/pengguna/main-index.blade.php
-      master-data/proyek/main-index.blade.php
-      master-data/proyek/proyek-picker-modal.blade.php
+      master-data/proyek/main-index.blade.php # CRUD + input Rupiah nilai_proyek + kolom Nilai Proyek
+      master-data/proyek/main-detail.blade.php # hero + ringkasan kas 5 kartu (2026-09-03) + tabs
       master-data/proyek-pekerja/main-index.blade.php  # compact hero + tabs + stats (refactor 2026-09-02)
       master-data/proyek-pengeluaran/main-index.blade.php # child CRUD pengeluaran (hero+stats+picker-less)
-      penggajian/main-index.blade.php
+      penggajian/main-index.blade.php   # child panel per-proyek (tanpa picker; proyek implisit)
       penggajian/main-detail.blade.php  # 3 modal (pencatatan/summary/bayar)
   components/                           # blade views untuk App\View\Components
     main/page-header.blade.php
@@ -171,7 +175,7 @@ Route::middleware('auth')->group(function () {
   `Route::livewire()` menerima FQCN class, mis. `Login::class`.
 - Auth: login via aksi Livewire (`Auth::attempt` + `RateLimiter` + `session()->regenerate()`),
   logout via route POST. `/dashboard`, `/pengguna`, `/proyek`, `/proyek/{proyek}/detail` wajib login; `/login` hanya untuk guest.
-- **Detail proyek (`/proyek/{proyek}/detail`)** — halaman konsolidasi dengan tab (Pekerja / Pengeluaran / Penggajian). Parent `MainDetail` render hero + tabs + child panel per tab via `<livewire:...>` nested. CRUD pekerja & pengeluaran = child inline; CRUD penggajian = child panel per-proyek (gating: butuh pekerja aktif).
+- **Detail proyek (`/proyek/{proyek}/detail`)** — halaman konsolidasi dengan hero + **ringkasan kas 5 kartu** (Nilai Proyek, Total Pengeluaran, Total Penggajian, Total Biaya, Sisa Kas + badge Surplus/Defisit, per 2026-09-03) + tab (Pekerja / Pengeluaran / Penggajian). Parent `MainDetail` render hero + ringkasan + tabs + child panel per tab via `<livewire:...>` nested. CRUD pekerja & pengeluaran = child inline; CRUD penggajian = child panel per-proyek (gating: butuh pekerja aktif).
 - **Rincian penggajian per-pekerja** tetap sub-halaman `/penggajian/{id}/detail` (3 modal: pencatatan upah + summary + bayar).
 - Route lama `proyek.pekerja.index`, `proyek.pengeluaran.index`, `penggajian.index` (global) sudah dihapus.
 - Route param `{proyek}` diteruskan ke `mount()` dan di‑resolve jadi model (jangan namai properti public sama dengan nama route param).
@@ -252,13 +256,12 @@ dipanggil via tag `<x-...>` (bukan inline di view):
 Bikin komponen serupa dengan `php artisan make:component <Nama> --view` (class di
 `app/View/Components`, blade di `resources/views/components`).
 
-### 4.8 Modal Select Referensi (Proyek Picker)
+### 4.8 Modal Select Referensi (Proyek Picker — LEGACY, dihapus)
 
-Pilih data referensi (mis. **Proyek**) di form/filter **harus** pakai modal picker Livewire,
-bukan `<select>` native besar. Referensi kanonik:
-`app/Livewire/MasterData/Proyek/ProyekPickerModal.php` +
-`resources/views/livewire/master-data/proyek/proyek-picker-modal.blade.php`,
-dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
+`ProyekPickerModal` + `proyek-picker-modal.blade.php` **sudah dihapus** pada refactor
+per-proyek (2026-09-02): `Penggajian\MainIndex` kini child panel dengan `mount($proyek)` —
+proyek implisit dari route param, bukan dipilih user. Pola modal picker tetap jadi referensi
+konsep untuk FK di masa depan (lihat §10.10), tapi jangan cari file-nya di kode saat ini.
 
 ---
 
@@ -275,9 +278,12 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
 - **Model `User`**: `HasRoles` (spatie) + `SoftDeletes`; atribut `#[Fillable]`/`#[Hidden]`
   pakai PHP 8 attribute (bukan `$fillable`). Password auto-hashed via cast. Helper: `isAdmin()`
   (role `administrator`/`meggi`), `isOperator()` (role `operator`), `user_role` (akses role pertama).
-- **Model `Proyek`**: `#[Fillable]`, `status` di-cast ke enum `App\Enum\StatusProyek`
-  (`AKTIF`/`NONAKTIF`); `HasFactory` + `SoftDeletes`; relasi `pekerjas()` (hasMany). `kode_proyek`
-  dibuat otomatis (`PRJ001`…`PRJ999`) di `doCreate`, bukan diinput user.
+- **Model `Proyek`**: `#[Fillable]` (termasuk `nilai_proyek` per 2026-09-03), `tanggal_mulai`/`tanggal_selesai`
+  di-cast `date`, `nilai_proyek` di-cast `decimal:2` (DB `decimal(15,2)` nullable), `status` di-cast enum
+  `App\Enums\StatusProyek` (`AKTIF`/`NONAKTIF`); `HasFactory` + `SoftDeletes`;
+  relasi `proyekPekerja()`/`proyekPengeluaran()`/`proyekPenggajian()` (HasMany). `kode_proyek`
+  dibuat otomatis (`PRJ001`…`PRJ999`) di `doCreate`, bukan diinput user. `nilai_proyek` opsional
+  (`nullable|numeric|min:0`), input via pola Rupiah §10.8, tampil `Rp …` / `-` bila null.
 - **Model `ProyekPekerja`**: `#[Fillable]` (termasuk `proyek_id`); `tarif_harian`/`tarif_overtime`
   di-cast `decimal:2` (DB `decimal(15,2)` per 2026-09-02), `status` di-cast enum `App\Enum\StatusPekerja`; `HasFactory` + `SoftDeletes`;
   relasi `proyek()` (belongsTo). `proyek_id` punya FK constraint → `proyeks.id` (cascade). Detail page compact hero + tabs (Pekerja active) + inline stats.
@@ -285,7 +291,7 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
 - **Model `ProyekPenggajian`**: `#[Fillable]` (termasuk `proyek_id`); `periode_mulai`/`periode_selesai`
   di-cast `date`, `jam_kerja` `integer`, `status` di-cast enum `App\Enums\StatusPenggajian`;
   `HasFactory` + `SoftDeletes`; relasi `proyek()` (belongsTo) + `proyekPenggajianPekerja()` (HasMany, ditambah 2026-09-02). `proyek_id` punya FK constraint →
-  `proyeks.id` (cascade). Pilih Proyek di form/filter pakai `ProyekPickerModal` (lihat §4.8/§10.10); `filterProyekId` `#[Url]` untuk link dari Proyek.
+  `proyeks.id` (cascade). Proyek implisit dari `mount($proyek)` (picker dihapus 2026-09-02, lihat §4.8).
 - **Model `ProyekPenggajianPekerja`**: `#[Fillable]` (termasuk `proyek_penggajian_id`, `proyek_pekerja_id`);
   `tarif_harian`/`tarif_overtime` (`tarif_lembur` → `tarif_overtime` rename 2026-09-02)/`total_hari`/`total_overtime`/`gaji_normal`/`upah_overtime`/
   `bonus`/`potongan`/`kasbon`/`total_bersih` di-cast `decimal:2` (DB `decimal(15,2)` per 2026-09-02), `status_bayar` di-cast enum
@@ -319,6 +325,7 @@ dipakai di CRUD Penggajian (`/penggajian`). Detail pola di §10.10.
   bukan orphan. File `resources/views/main.blade.php` & `welcome.blade.php` sudah dihapus.
 - **Sudah ada:** Detail Proyek (`/proyek/{proyek}/detail`) — halaman konsolidasi dengan hero + tabs (Pekerja / Pengeluaran / Penggajian). Parent `MainDetail` (`MasterData/Proyek/MainDetail`) render child panel per tab via `<livewire:...>` nested. CRUD Pekerja & Pengeluaran = child inline (`ProyekPekerja\MainIndex`, `ProyekPengeluaran\MainIndex`) tanpa `#[Layout]` (nested panel). CRUD Penggajian = child `Penggajian\MainIndex` per-proyek (gating: butuh pekerja aktif). Route `proyek.detail`. Tab via `#[Url(except:'pekerja')]`.
 - **Sudah ada:** Sub-modul penggajian per pekerja: `/penggajian/{id}/detail` (route `penggajian.detail`), komponen `MainDetail` + view — **3 modal per pekerja**: pencatatan upah (`hari_normal in:0,0.5,1`, `jam_overtime 0..24`, `bonus/potongan/kasbon` required, `keterangan` textarea + prune hari di luar periode), summary read-only (tabel hari + totals `gaji_normal/upah_overtime/total_bersih`), ubah status bayar (`status_bayar` enum + `tanggal_bayar required_if SUDAH` + `keterangan` existing terisi). `prepareState()` `firstOrCreate` (preserve data) auto-sync pekerja dari `proyek.proyekPekerja`, border-base-300 konsisten, `type="number"` + lock pencatatan saat `SUDAH`.
+- **Sudah ada (2026-09-03):** `nilai_proyek` di Proyek (`decimal 15,2` nullable; migrasi `2026_09_03_115050`; CRUD input Rupiah + kolom tabel sortable; validasi `nullable|numeric|min:0`; factory random 50jt–5M) + **ringkasan kas** di `/proyek/{proyek}/detail` (`MainDetail::render()` hitung `totalPengeluaran = SUM(pengeluaran.nominal)`, `totalPenggajian = SUM(pekerja.total_bersih via penggajian_ids)`, `totalBiaya`, `sisaKas = nilai − biaya`; view 5 kartu + badge Surplus/Defisit). Test: `ProyekCrudTest` (create + numeric) & `ProyekDetailTest` (summary 10jt−5jt=5jt).
 
 ---
 
@@ -403,10 +410,11 @@ Contoh kedua (akses admin + operator, tanpa password/role):
 di `doCreate` — tidak diinput user & tidak berubah saat edit.
 Contoh ketiga (**main‑detail + CRUD child** dengan route param & **input Rupiah
 terformat**): `app/Livewire/MasterData/ProyekPekerja/MainIndex.php` +
-`resources/views/livewire/master-data/proyek-pekerja/main-index.blade.php`.
-Contoh keempat (CRUD + **modal select referensi**): `Penggajian/MainIndex.php` +
-`resources/views/livewire/penggajian/main-index.blade.php` (+ `ProyekPickerModal`).
-Pola modal referensi dijelaskan di §10.10.
+`resources/views/livewire/master-data/proyek-pekerja/main-index.blade.php`
+(plus `nilai_proyek` di `MasterData/Proyek/MainIndex` sebagai contoh field uang nullable).
+Contoh keempat (CRUD per-proyek tanpa picker): `Penggajian/MainIndex.php` +
+`resources/views/livewire/penggajian/main-index.blade.php` (`mount($proyek)`, proyek implisit).
+Pola modal referensi (legacy, file dihapus) dijelaskan di §10.10.
 
 ### 10.1 Struktur class component
 
@@ -541,12 +549,13 @@ Field uang (`decimal`) **wajib** pakai pola input berformat ribuan Indonesia, bu
 > **Checklist CRUD baru:** class + view + route (`Route::livewire` FQCN) + JS delete
 > wiring (bila ada hapus) + feature test. Jalankan `vendor/bin/pint` & `php artisan test`.
 
-### 10.10 Pola Modal Select Referensi (wajib untuk pilih data FK/referensi)
+### 10.10 Pola Modal Select Referensi (LEGACY — konsep saja, file dihapus)
 
 Saat form/filter perlu memilih data referensi (Proyek, User, dll) yang jumlahnya bisa banyak,
 **jangan pakai `<select>` native**. Buat **Livewire component modal picker** reusable.
-Referensi kanonik: `ProyekPickerModal` + `proyek-picker-modal.blade.php`, dipakai di
-`MasterData/Penggajian/MainIndex` + `main-index.blade.php`.
+Referensi konsep: `ProyekPickerModal` + `proyek-picker-modal.blade.php` (pernah dipakai di
+`Penggajian/MainIndex` global; **file sudah dihapus 2026-09-02** — Penggajian kini per-proyek,
+proyek implisit via `mount($proyek)`). Tiru pola komunikasi di bawah bila butuh picker baru.
 
 **Komunikasi parent → modal (buka):**
 ```php

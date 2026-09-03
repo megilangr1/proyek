@@ -28,6 +28,7 @@ class ProyekFactory extends Factory
             'lokasi' => fake()->address(),
             'tanggal_mulai' => $tanggalMulai->format('Y-m-d'),
             'tanggal_selesai' => $tanggalSelesai->format('Y-m-d'),
+            'nilai_proyek' => fake()->randomFloat(2, 50000000, 5000000000),
             'status' => StatusProyek::AKTIF,
         ];
     }

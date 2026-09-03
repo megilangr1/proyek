@@ -25,6 +25,7 @@ class MainIndex extends Component
         'pemilik',
         'tanggal_mulai',
         'tanggal_selesai',
+        'nilai_proyek',
         'created_at',
         'id',
     ];
@@ -43,6 +44,8 @@ class MainIndex extends Component
         'lokasi' => null,
         'tanggal_mulai' => null,
         'tanggal_selesai' => null,
+        'nilai_proyek' => null,
+        'nilai_proyek_text' => null,
         'status' => StatusProyek::AKTIF->value,
     ];
 
@@ -130,6 +133,10 @@ class MainIndex extends Component
             $this->state['lokasi'] = $this->editData->lokasi;
             $this->state['tanggal_mulai'] = $this->editData->tanggal_mulai?->format('Y-m-d');
             $this->state['tanggal_selesai'] = $this->editData->tanggal_selesai?->format('Y-m-d');
+            $this->state['nilai_proyek'] = $this->editData->nilai_proyek;
+            $this->state['nilai_proyek_text'] = $this->editData->nilai_proyek !== null
+                ? number_format((float) $this->editData->nilai_proyek, 0, ',', '.')
+                : '';
             $this->state['status'] = $this->editData->status->value;
         } else {
             $this->reset('editData');
@@ -164,6 +171,7 @@ class MainIndex extends Component
             'state.lokasi' => 'required|string',
             'state.tanggal_mulai' => 'required|date',
             'state.tanggal_selesai' => 'required|date|after_or_equal:state.tanggal_mulai',
+            'state.nilai_proyek' => 'nullable|numeric|min:0|max:9999999999999.99',
             'state.status' => ['required', Rule::enum(StatusProyek::class)],
         ], [], [
             'state.kode_proyek' => 'Kode Proyek',
@@ -172,6 +180,7 @@ class MainIndex extends Component
             'state.lokasi' => 'Lokasi',
             'state.tanggal_mulai' => 'Tanggal Mulai',
             'state.tanggal_selesai' => 'Tanggal Selesai',
+            'state.nilai_proyek' => 'Nilai Proyek',
             'state.status' => 'Status Proyek',
         ]);
 
@@ -207,6 +216,7 @@ class MainIndex extends Component
             'state.lokasi' => 'required|string',
             'state.tanggal_mulai' => 'required|date',
             'state.tanggal_selesai' => 'required|date|after_or_equal:state.tanggal_mulai',
+            'state.nilai_proyek' => 'nullable|numeric|min:0|max:9999999999999.99',
             'state.status' => ['required', Rule::enum(StatusProyek::class)],
         ], [], [
             'state.nama_proyek' => 'Nama Proyek',
@@ -214,6 +224,7 @@ class MainIndex extends Component
             'state.lokasi' => 'Lokasi',
             'state.tanggal_mulai' => 'Tanggal Mulai',
             'state.tanggal_selesai' => 'Tanggal Selesai',
+            'state.nilai_proyek' => 'Nilai Proyek',
             'state.status' => 'Status Proyek',
         ]);
 

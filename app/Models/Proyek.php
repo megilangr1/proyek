@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'lokasi',
     'tanggal_mulai',
     'tanggal_selesai',
+    'nilai_proyek',
     'status',
 ])]
 class Proyek extends Model
@@ -25,6 +26,7 @@ class Proyek extends Model
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
+        'nilai_proyek' => 'decimal:2',
         'status' => StatusProyek::class,
     ];
 

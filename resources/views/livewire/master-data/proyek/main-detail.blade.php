@@ -64,6 +64,62 @@
         </div>
     </div>
 
+    {{-- Ringkasan kas proyek --}}
+    <div class="rounded-2xl border border-base-300 bg-base-100 px-5 py-4" data-motion="fade-up">
+        <div class="flex items-center justify-between gap-2 mb-3">
+            <h4 class="text-sm font-bold flex items-center gap-2">
+                <x-lucide-calculator class="size-4 text-primary" /> Ringkasan Kas Proyek
+            </h4>
+            <span class="badge badge-sm {{ $summary['sisaKas'] >= 0 ? 'badge-success' : 'badge-error' }}">
+                {{ $summary['sisaKas'] >= 0 ? 'Surplus' : 'Defisit' }}
+            </span>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
+            <div>
+                <span class="block text-[10px] font-semibold tracking-widest uppercase text-base-content/50">Nilai Proyek</span>
+                <span class="font-bold flex items-center gap-1">
+                    <x-lucide-banknote class="size-3 text-base-content/50" />
+                    Rp {{ number_format($summary['nilaiProyek'], 0, ',', '.') }}
+                </span>
+                @if ($proyek->nilai_proyek === null)
+                    <span class="block text-[11px] text-base-content/50">Belum diisi</span>
+                @endif
+            </div>
+            <div>
+                <span class="block text-[10px] font-semibold tracking-widest uppercase text-base-content/50">Total Pengeluaran</span>
+                <span class="font-semibold flex items-center gap-1">
+                    <x-lucide-receipt class="size-3 text-base-content/50" />
+                    Rp {{ number_format($summary['totalPengeluaran'], 0, ',', '.') }}
+                </span>
+                <span class="block text-[11px] text-base-content/50">{{ $pengeluaranCount }} entri</span>
+            </div>
+            <div>
+                <span class="block text-[10px] font-semibold tracking-widest uppercase text-base-content/50">Total Penggajian</span>
+                <span class="font-semibold flex items-center gap-1">
+                    <x-lucide-wallet class="size-3 text-base-content/50" />
+                    Rp {{ number_format($summary['totalPenggajian'], 0, ',', '.') }}
+                </span>
+                <span class="block text-[11px] text-base-content/50">{{ $penggajianCount }} periode</span>
+            </div>
+            <div>
+                <span class="block text-[10px] font-semibold tracking-widest uppercase text-base-content/50">Total Biaya Proyek</span>
+                <span class="font-bold flex items-center gap-1">
+                    <x-lucide-calculator class="size-3 text-base-content/50" />
+                    Rp {{ number_format($summary['totalBiaya'], 0, ',', '.') }}
+                </span>
+                <span class="block text-[11px] text-base-content/50">Pengeluaran + Penggajian</span>
+            </div>
+            <div>
+                <span class="block text-[10px] font-semibold tracking-widest uppercase text-base-content/50">Sisa Kas</span>
+                <span class="font-bold flex items-center gap-1 {{ $summary['sisaKas'] >= 0 ? 'text-success' : 'text-error' }}">
+                    <x-lucide-piggy-bank class="size-3" />
+                    Rp {{ number_format($summary['sisaKas'], 0, ',', '.') }}
+                </span>
+                <span class="block text-[11px] text-base-content/50">Nilai - Total Biaya</span>
+            </div>
+        </div>
+    </div>
+
     {{-- Tabs antar modul --}}
     <div role="tablist" class="tabs tabs-boxed bg-base-200 p-1 w-fit" data-motion="fade-up">
         <button type="button" role="tab" class="tab gap-1 {{ $tab === 'pekerja' ? 'tab-active' : '' }}"

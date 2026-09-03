@@ -158,7 +158,47 @@
                         </div>
                     </div>
 
-                    <div class="col-span-6 lg:col-span-6">
+                    <div class="col-span-6 lg:col-span-3">
+                        <label for="nilai_proyek"
+                            class="block text-sm font-medium mb-2 {{ $errors->has('state.nilai_proyek') ? 'text-red-500' : '' }}">
+                            Nilai Proyek :
+                        </label>
+                        <div class="relative">
+                            <input type="text" wire:model="state.nilai_proyek_text" id="nilai_proyek"
+                                name="nilai_proyek"
+                                class="w-full ps-14 text-right input @error('state.nilai_proyek') input-error @enderror"
+                                aria-describedby="nilai_proyek-helper" placeholder="Contoh : 1.500.000.000"
+                                autocomplete="false" x-data
+                                x-on:input="
+                                    const raw = $el.value.replace(/[^\d]/g, '');
+                                    $wire.set('state.nilai_proyek', raw === '' ? null : raw);
+                                    $wire.set('state.nilai_proyek_text', raw === '' ? '' : new Intl.NumberFormat('id-ID').format(raw));
+                                ">
+                            <div class="absolute inset-y-0 inset-s-0 flex items-center pointer-events-none z-20 ps-4">
+                                <span class="text-gray-500 text-sm font-semibold">
+                                    Rp.
+                                </span>
+                            </div>
+                            <div
+                                class="absolute inset-y-0 inset-e-0 {{ $errors->has('state.nilai_proyek') ? 'flex' : 'hidden' }} items-center pointer-events-none pe-3">
+                                <svg class="shrink-0 size-4 text-red-500" xmlns="http://www.w3.org/2000/svg"
+                                    width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" x2="12" y1="8" y2="12"></line>
+                                    <line x1="12" x2="12.01" y1="16" y2="16"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        @error('state.nilai_proyek')
+                            <p class="text-xs text-red-600 mt-1" id="nilai_proyek-helper">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    <div class="col-span-6 lg:col-span-3">
                         <label for="status"
                             class="block text-sm font-medium mb-2 {{ $errors->has('state.status') ? 'text-red-500' : '' }}">
                             Status Proyek :
@@ -254,6 +294,9 @@
                     <td>
                         <x-table.th label="Selesai" field="tanggal_selesai" :orderBy="$order_by" :orderType="$order_type" />
                     </td>
+                    <td>
+                        <x-table.th label="Nilai Proyek" field="nilai_proyek" :orderBy="$order_by" :orderType="$order_type" />
+                    </td>
                     <td>Status</td>
                     <th class="text-center" width="10%">Aksi</th>
                 </tr>
@@ -269,6 +312,9 @@
                         <td class="max-w-xs truncate" title="{{ $item->lokasi }}">{{ $item->lokasi ?? '-' }}</td>
                         <td>{{ $item->tanggal_mulai?->format('d/m/Y') ?? '-' }}</td>
                         <td>{{ $item->tanggal_selesai?->format('d/m/Y') ?? '-' }}</td>
+                        <td class="text-right whitespace-nowrap">
+                            {{ $item->nilai_proyek !== null ? 'Rp '.number_format((float) $item->nilai_proyek, 0, ',', '.') : '-' }}
+                        </td>
                         <td>
                             @if ($item->status === \App\Enums\StatusProyek::AKTIF)
                                 <span class="badge badge-success">{{ $item->status->label() }}</span>
@@ -310,7 +356,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center p-2">Belum Ada Data</td>
+                        <td colspan="10" class="text-center p-2">Belum Ada Data</td>
                     </tr>
                 @endforelse
             </tbody>

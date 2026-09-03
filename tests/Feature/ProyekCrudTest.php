@@ -149,3 +149,41 @@ test('administrator can soft delete a proyek', function () {
 
     $this->assertSoftDeleted('proyeks', ['id' => $target->id]);
 });
+
+test('administrator can create a proyek with nilai proyek', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('administrator');
+
+    Livewire::actingAs($admin)
+        ->test(MainIndex::class)
+        ->set('state.nama_proyek', 'Proyek Nilai')
+        ->set('state.pemilik', 'PT Nilai')
+        ->set('state.lokasi', 'Jakarta')
+        ->set('state.tanggal_mulai', '2026-01-01')
+        ->set('state.tanggal_selesai', '2026-12-31')
+        ->set('state.nilai_proyek', '1500000000')
+        ->set('state.status', 1)
+        ->call('actionForm')
+        ->assertHasNoErrors();
+
+    expect((float) Proyek::where('nama_proyek', 'Proyek Nilai')->firstOrFail()->nilai_proyek)->toBe(1500000000.0);
+});
+
+test('nilai proyek must be numeric when filled', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('administrator');
+
+    Livewire::actingAs($admin)
+        ->test(MainIndex::class)
+        ->set('state.nama_proyek', 'Proyek Invalid')
+        ->set('state.pemilik', 'PT Invalid')
+        ->set('state.lokasi', 'Jakarta')
+        ->set('state.tanggal_mulai', '2026-01-01')
+        ->set('state.tanggal_selesai', '2026-12-31')
+        ->set('state.nilai_proyek', 'bukan-angka')
+        ->set('state.status', 1)
+        ->call('actionForm')
+        ->assertHasErrors(['state.nilai_proyek']);
+
+    expect(Proyek::where('nama_proyek', 'Proyek Invalid')->exists())->toBeFalse();
+});
